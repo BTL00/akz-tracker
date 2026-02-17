@@ -14,3 +14,7 @@ module.exports = {
   signalkUrl: process.env.SIGNALK_URL || '',
   signalkToken: process.env.SIGNALK_TOKEN || '',
 };
+
+app.get('/*', (_req, res) => {
+  res.status(404).send('Not Found');
+});

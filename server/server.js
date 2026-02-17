@@ -71,7 +71,7 @@ const clientDir = path.join(__dirname, '..', 'client');
 app.use(express.static(clientDir));
 
 // SPA fallback – serve index.html for any non-API, non-file request
-app.get('/*', (_req, res) => {
+app.get('*', (_req, res) => {
   res.sendFile(path.join(clientDir, 'index.html'));
 });
 
