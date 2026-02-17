@@ -3,7 +3,7 @@ set -e
 
 TIMESTAMP=$(date -u +"%Y-%m-%d_%H-%M")
 ARCHIVE="/backups/akz-${TIMESTAMP}.gz"
-RETENTION=${BACKUP_RETENTION_DAYS:-7}
+RETENTION=${BACKUP_RETENTION_DAYS:-14}
 
 echo "[backup] Starting dump at $(date -u)"
 mongodump \

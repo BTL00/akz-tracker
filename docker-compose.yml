@@ -35,23 +35,23 @@ services:
       - "127.0.0.1:3001:3001"
     # Apache TLS proxy is the public entry point
 
-  # ---------- MongoDB backup (disabled for now) ----------
-  # mongo-backup:
-  #   build:
-  #     context: ./mongo-backup
-  #     dockerfile: Dockerfile
-  #   restart: unless-stopped
-  #   depends_on:
-  #     mongo:
-  #       condition: service_healthy
-  #   volumes:
-  #     - ./backups:/backups
-  #   environment:
-  #     MONGO_URI: mongodb://mongo:27017/akz-tracker
-  #     BACKUP_SCHEDULE: ${BACKUP_SCHEDULE:-0 2 * * *}
-  #     BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
-  #   networks:
-  #     - backend
+  ---------- MongoDB backup (disabled for now) ----------
+  mongo-backup:
+    build:
+      context: ./mongo-backup
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./backups:/backups
+    environment:
+      MONGO_URI: mongodb://mongo:27017/akz-tracker
+      BACKUP_SCHEDULE: ${BACKUP_SCHEDULE:-0 2 * * *}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    networks:
+      - backend
 
 volumes:
   mongo-data:
