@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="description" content="AKZ Tracker – live boat positions on OpenSeaMap" />
+    <meta name="api-key" content="" />
+
+    <title>AKZ Tracker</title>
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- App CSS -->
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+
+    <!-- Full-viewport map container -->
+    <div id="map"></div>
+
+    <!-- Expedition picker (top-left, always visible) -->
+    <div id="expedition-picker">
+        <select id="expedition-select" title="Choose expedition">
+            <option value="">All Boats</option>
+        </select>
+    </div>
+
+    <!-- Connection mode toggle (below expedition picker) -->
+    <div id="connection-controls">
+        <select id="connection-mode-select" title="Connection mode">
+            <option value="websocket">WebSocket</option>
+            <option value="polling-60">Polling 1 min</option>
+            <option value="polling-300">Polling 5 min</option>
+        </select>
+        <div id="connection-status" title="Last update time">
+            <span id="connection-indicator">●</span>
+            <span id="last-update-time">—</span>
+        </div>
+    </div>
+
+    <!-- Floating action buttons (top-right) -->
+    <div id="floating-btns">
+        <button id="fit-btn" type="button" title="Auto-fit view to boats">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+            </svg>
+            <span>Auto-fit</span>
+        </button>
+        <button id="track-btn" type="button" title="Track this device">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                <circle cx="12" cy="9" r="2.5" />
+            </svg>
+            <span>Track</span>
+        </button>
+        <button id="admin-btn" type="button" title="Admin panel">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 1v6m0 6v6M5.6 5.6l4.2 4.2m4.2 4.2l4.2 4.2M1 12h6m6 0h6M5.6 18.4l4.2-4.2m4.2-4.2l4.2-4.2" />
+            </svg>
+            <span>Admin</span>
+        </button>
+        <button id="theme-toggle-btn" type="button" title="Toggle Dark Mode">
+            <span id="theme-icon">🌙</span>
+            <span id="theme-label">Dark mode</span>
+        </button>
+    </div>
+
+    <!-- Tracker config modal -->
+    <div id="tracker-modal" class="tracker-modal-overlay hidden">
+        <div class="tracker-modal">
+            <h3>Start Tracking</h3>
+            <p>Your phone will send its GPS position to the map every 10 seconds.</p>
+            <div class="field-group">
+                <label for="tracker-name">Boat / Device Name</label>
+                <input id="tracker-name" type="text" placeholder="e.g. Piotr's Phone" autocomplete="off" />
+            </div>
+            <div class="field-group">
+                <label for="tracker-pin">Boat PIN</label>
+                <input id="tracker-pin" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                    placeholder="6-digit PIN" autocomplete="off" required />
+            </div>
+            <div class="field-group">
+                <label for="tracker-color">Marker Colour</label>
+                <input id="tracker-color" type="color" value="#e74c3c" />
+            </div>
+            <button id="tracker-start-btn" type="button">Start Tracking</button>
+            <button id="tracker-cancel-btn" type="button" class="secondary">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Playback bar (hidden by default, slides up in history mode) -->
+    <div id="playback-bar" class="playback-bar hidden">
+        <input id="time-slider" type="range" min="0" max="1000" value="0" step="1" title="Seek" />
+        <span id="time-display">--:--</span>
+        <select id="speed-select" title="Playback speed">
+            <option value="1">1×</option>
+            <option value="10">10×</option>
+            <option value="50" selected>50×</option>
+            <option value="200">200×</option>
+            <option value="500">500×</option>
+        </select>
+        <button id="play-btn" type="button" title="Play / Pause">
+            <svg id="play-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="6,3 20,12 6,21" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Admin login modal -->
+    <div id="admin-login-modal" class="admin-modal-overlay hidden">
+        <div class="tracker-modal">
+            <h3>Admin Login</h3>
+            <p style="font-size: 14px; color: #666; margin-bottom: 16px;">Enter the master API key to access the admin
+                panel.</p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <input type="password" id="admin-api-key-input" placeholder="API key"
+                    style="padding: 10px 12px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-family: inherit; font-size: 14px;">
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <button id="admin-login-cancel" type="button" class="cancel-btn"
+                        style="padding: 8px 16px; border: none; border-radius: 8px; background: rgba(0,0,0,0.06); color: #555; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">Cancel</button>
+                    <button id="admin-login-submit" type="button" class="submit-btn"
+                        style="padding: 8px 16px; border: none; border-radius: 8px; background: #007aff; color: #fff; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin modal -->
+    <div id="admin-modal" class="admin-modal-overlay hidden">
+        <div class="admin-modal">
+            <div class="admin-header">
+                <h3>Admin Panel</h3>
+                <button id="admin-close-btn" type="button" class="close-btn" title="Close">×</button>
+            </div>
+            <div class="admin-tabs">
+                <button class="tab-btn active" data-tab="expeditions">Expeditions</button>
+                <button class="tab-btn" data-tab="boats">Boats</button>
+                <button class="tab-btn" data-tab="gpx">GPX Import</button>
+                <button class="tab-btn" data-tab="nmea">NMEA Import</button>
+            </div>
+            <div class="admin-content">
+                <div id="expeditions-tab" class="tab-content active">
+                    <div class="tab-header">
+                        <h4>Manage Expeditions</h4>
+                        <button id="new-expedition-btn" type="button" class="primary-btn">+ New Expedition</button>
+                    </div>
+                    <div class="data-table">
+                        <table id="expeditions-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Boats</th>
+                                    <th>Dates</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="boats-tab" class="tab-content hidden">
+                    <div class="tab-header">
+                        <h4>Manage Boats</h4>
+                        <button id="new-boat-btn" type="button" class="primary-btn">+ New Boat</button>
+                    </div>
+                    <div id="boat-created-notice" class="boat-created-notice hidden">
+                        <div class="bcn-header">
+                            <strong>Boat created</strong>
+                            <button type="button"
+                                onclick="document.getElementById('boat-created-notice').classList.add('hidden')">&times;</button>
+                        </div>
+                        <div class="bcn-row"><span>PIN</span><code id="bcn-pin"></code></div>
+                        <div class="bcn-row"><span>GPS Tracker API Key</span><code id="bcn-apikey"></code></div>
+                        <p class="bcn-hint">Give the PIN to the boat captain to start tracking.</p>
+                    </div>
+                    <div class="data-table">
+                        <table id="boats-table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Name</th>
+                                    <th>PIN</th>
+                                    <th>MMSI</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="gpx-tab" class="tab-content hidden">
+                    <div class="tab-header">
+                        <h4>GPX Import</h4>
+                    </div>
+                    <div class="gpx-section">
+                        <h5>Import GPX File</h5>
+                        <p>Upload a GPX file containing historical track data. You'll map each track to an existing
+                            boat. Leave boat dropdown empty to skip a track.</p>
+                        <input type="file" id="gpx-file-input" accept=".gpx,application/gpx+xml" />
+                        <button id="gpx-upload-btn" type="button" class="primary-btn">Upload & Preview</button>
+                        <div id="gpx-preview" class="gpx-preview hidden">
+                            <h6>Map GPX Tracks to Boats</h6>
+                            <div id="gpx-mapping-list"></div>
+                            <button id="gpx-import-confirm-btn" type="button" class="primary-btn">Import
+                                Locations</button>
+                            <button id="gpx-import-cancel-btn" type="button" class="secondary">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="nmea-tab" class="tab-content hidden">
+                    <div class="tab-header">
+                        <h4>NMEA Import</h4>
+                    </div>
+                    <div class="nmea-section">
+                        <h5>Import NMEA File</h5>
+                        <p>Upload an NMEA 0183 file from your chart plotter or GPS logger. Supported formats: .nmea,
+                            .txt, .log</p>
+                        <input type="file" id="nmea-file-input" accept=".nmea,.txt,.log,.nmea0183" />
+                        <button id="nmea-upload-btn" type="button" class="primary-btn">Upload & Preview</button>
+                        <div id="nmea-preview" class="nmea-preview hidden">
+                            <h6>Import Summary</h6>
+                            <div id="nmea-summary"></div>
+                            <h6>Select Boat</h6>
+                            <div id="nmea-boat-select">
+                                <label>Boat:
+                                    <select id="nmea-boat-id" required>
+                                        <option value="">-- Select Boat --</option>
+                                    </select>
+                                </label>
+                                <label>PIN:
+                                    <input type="password" id="nmea-boat-pin" placeholder="Enter 6-digit PIN"
+                                        maxlength="6" required />
+                                </label>
+                            </div>
+                            <button id="nmea-import-confirm-btn" type="button" class="primary-btn">Import
+                                Locations</button>
+                            <button id="nmea-import-cancel-btn" type="button" class="secondary">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offline / error banner -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- Boat GPX Export Modal -->
+    <div id="boat-export-modal" class="tracker-modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Export Boat GPX</h3>
+            <input type="hidden" id="boat-export-id">
+            <p>Exporting GPX for: <strong id="boat-export-name"></strong></p>
+            <label>Start Date:
+                <input type="date" id="boat-export-start" required>
+            </label>
+            <label>End Date:
+                <input type="date" id="boat-export-end" required>
+            </label>
+            <div class="modal-actions">
+                <button onclick="admin.confirmBoatExport()">Confirm Export</button>
+                <button class="delete-btn" onclick="admin.cancelBoatExport()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- App modules (load order matters) -->
+    <script src="js/map.js"></script>
+    <script src="js/boats.js"></script>
+    <script src="js/expedition.js"></script>
+    <script src="js/playback.js"></script>
+    <script src="js/tracker.js"></script>
+    <script src="js/websocket.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/app.js"></script>
+
+    <!-- Register service worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(function (err) {
+                console.warn('SW registration failed:', err);
+            });
+        }
+    </script>
+</body>
+
+</html>

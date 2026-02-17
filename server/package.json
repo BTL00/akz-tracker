@@ -1,0 +1,24 @@
+{
+    "name": "akz-tracker-server",
+    "version": "1.0.0",
+    "description": "AKZ Tracker – GPS boat tracking API",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "node --watch server.js"
+    },
+    "dependencies": {
+        "@signalk/client": "^2.0.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.7",
+        "express": "^4.21.2",
+        "mongoose": "^8.10.1",
+        "multer": "^1.4.5-lts.1",
+        "nmea-simple": "^3.2.1",
+        "ws": "^8.18.0",
+        "xml2js": "^0.6.2"
+    },
+    "engines": {
+        "node": ">=20"
+    }
+}

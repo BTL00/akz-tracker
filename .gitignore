@@ -1,0 +1,10 @@
+node_modules/
+.env
+server/.env
+nginx/certs/
+mongo-data/
+backups/*.gz
+*.log
+.DS_Store
+IMPLEMENTATION_SUMMARY.md
+open-sea-map.html
