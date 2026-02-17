@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 module.exports = {
-  port: parseInt(process.env.PORT, 10) || 3000,
+  port: parseInt(process.env.PORT, 10) || 3001,
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/akz-tracker',
   apiKey: process.env.API_KEY || 'change-me-to-a-real-secret',
   
