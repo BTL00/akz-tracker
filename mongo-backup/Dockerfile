@@ -1,9 +1,11 @@
 FROM mongo:7
 
 # Install tini (clean signal handling) and dcron (lightweight cron daemon)
+# Ensure keyrings are readable by _apt to avoid GPG errors on update.
+RUN chmod a+r /etc/apt/trusted.gpg.d/*.gpg /usr/share/keyrings/*.gpg 2>/dev/null || true
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends tini dcron && \
-    rm -rf /var/lib/apt/lists/*
+  apt-get install -y --no-install-recommends tini dcron && \
+  rm -rf /var/lib/apt/lists/*
 
 COPY backup.sh /backup.sh
 RUN chmod +x /backup.sh
