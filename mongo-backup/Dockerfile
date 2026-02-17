@@ -1,4 +1,4 @@
-FROM mongo:7
+FROM mongo:4.4
 
 # Use supercronic (static binary) to avoid apt and GPG key issues during build.
 ADD https://github.com/aptible/supercronic/releases/download/v0.2.29/supercronic-linux-amd64 /usr/local/bin/supercronic
