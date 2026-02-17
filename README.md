@@ -60,16 +60,6 @@ All variables are set in your `.env` file (copied from `.env.example`).
 docker compose up -d
 ```
 
-### Google Cloud Run
-
-1. Build and push the image to [Artifact Registry](https://cloud.google.com/artifact-registry):
-   ```bash
-   docker build -t gcr.io/<project>/akz-tracker ./server
-   docker push gcr.io/<project>/akz-tracker
-   ```
-2. Deploy to Cloud Run, setting all environment variables as [Cloud Run secrets](https://cloud.google.com/run/docs/configuring/secrets).
-3. Use [MongoDB Atlas](https://www.mongodb.com/atlas) (free M0 tier) and set `MONGO_URI` accordingly.
-
 ## License
 
 [MIT](LICENSE)
