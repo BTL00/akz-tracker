@@ -35,7 +35,7 @@ services:
       - "127.0.0.1:3001:3001"
     # Apache TLS proxy is the public entry point
 
-  ---------- MongoDB backup (disabled for now) ----------
+  # ---------- MongoDB backup (disabled for now) ----------
   mongo-backup:
     build:
       context: ./mongo-backup
