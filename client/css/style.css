@@ -580,6 +580,118 @@ body.playback-visible .leaflet-bottom.leaflet-left .leaflet-control-scale {
     background: var(--button-hover);
 }
 
+/* Tracker tabs */
+.tracker-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.tracker-tab {
+    flex: 1;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--button-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tracker-tab:hover {
+    background: var(--button-hover);
+}
+
+.tracker-tab.active {
+    background: var(--accent);
+    color: var(--text-inverse);
+}
+
+.tracker-panel.hidden {
+    display: none;
+}
+
+/* NMEA client styles */
+.tracker-modal input[type="number"] {
+    width: 100%;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: var(--button-bg);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 0 12px;
+    outline: none;
+}
+
+.tracker-modal input[type="number"]:focus {
+    box-shadow: 0 0 0 2px var(--accent);
+}
+
+.tracker-modal .field-group small {
+    display: block;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+.nmea-status {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--button-bg);
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    min-height: 20px;
+    text-align: center;
+}
+
+.nmea-status:empty {
+    display: none;
+}
+
+.nmea-status.connecting {
+    background: rgba(0, 122, 255, 0.1);
+    color: var(--accent);
+}
+
+.nmea-status.connected {
+    background: rgba(52, 199, 89, 0.1);
+    color: var(--success);
+}
+
+.nmea-status.error,
+.nmea-status.disconnected {
+    background: rgba(255, 59, 48, 0.1);
+    color: var(--danger);
+}
+
+.nmea-status.relaying {
+    background: rgba(52, 199, 89, 0.1);
+    color: var(--success);
+}
+
+.tracker-modal button#nmea-connect-btn {
+    background: var(--accent);
+    color: var(--text-inverse);
+}
+
+.tracker-modal button#nmea-connect-btn:hover {
+    background: var(--accent-hover);
+}
+
+.tracker-modal button#nmea-connect-btn.connected {
+    background: var(--danger);
+}
+
+.tracker-modal button#nmea-connect-btn.connected:hover {
+    background: var(--danger-hover);
+}
+
 /* Global secondary button style for admin modal */
 button.secondary {
     background: var(--button-bg);

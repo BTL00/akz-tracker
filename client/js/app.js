@@ -53,9 +53,24 @@
     // Cache DOM elements — tracker modal
     trackerModal      = document.getElementById('tracker-modal');
     trackerNameInput  = document.getElementById('tracker-name');
+    trackerPinInput   = document.getElementById('tracker-pin');
     trackerColorInput = document.getElementById('tracker-color');
     trackerStartBtn   = document.getElementById('tracker-start-btn');
     trackerCancelBtn  = document.getElementById('tracker-cancel-btn');
+    
+    // Cache DOM elements — tracker tabs
+    var trackerTabGPS  = document.getElementById('tracker-tab-gps');
+    var trackerTabNMEA = document.getElementById('tracker-tab-nmea');
+    var trackerGPSPanel = document.getElementById('tracker-gps-panel');
+    var trackerNMEAPanel = document.getElementById('tracker-nmea-panel');
+    
+    // Cache DOM elements — NMEA client
+    var nmeaServerHost = document.getElementById('nmea-server-host');
+    var nmeaServerPort = document.getElementById('nmea-server-port');
+    var nmeaBoatId = document.getElementById('nmea-boat-id');
+    var nmeaBoatPin = document.getElementById('nmea-boat-pin');
+    var nmeaStatus = document.getElementById('nmea-status');
+    var nmeaConnectBtn = document.getElementById('nmea-connect-btn');
 
     // Cache DOM elements — connection controls
     connectionModeSelect = document.getElementById('connection-mode-select');
@@ -187,12 +202,53 @@
     timeSlider.addEventListener('input', onSliderInput);
 
     // ---------- Floating button: track device ----------
+    // Tracker tabs
+    trackerTabGPS.addEventListener('click', function () {
+      trackerTabGPS.classList.add('active');
+      trackerTabNMEA.classList.remove('active');
+      trackerGPSPanel.classList.remove('hidden');
+      trackerNMEAPanel.classList.add('hidden');
+    });
+    
+    trackerTabNMEA.addEventListener('click', function () {
+      trackerTabNMEA.classList.add('active');
+      trackerTabGPS.classList.remove('active');
+      trackerNMEAPanel.classList.remove('hidden');
+      trackerGPSPanel.classList.add('hidden');
+    });
+    
     trackBtn.addEventListener('click', onTrackToggle);
     trackerStartBtn.addEventListener('click', onTrackerStart);
     trackerCancelBtn.addEventListener('click', hideTrackerModal);
     trackerModal.addEventListener('click', function (e) {
       if (e.target === trackerModal) hideTrackerModal();
     });
+    
+    // NMEA client handlers
+    nmeaConnectBtn.addEventListener('click', onNMEAConnectToggle);
+    
+    // Configure NMEA client callback for status updates
+    NMEAClient.configure({
+      onStatusChange: function (status, message) {
+        updateNMEAStatus(status, message);
+      }
+    });
+    
+    // Load saved NMEA settings
+    var savedNMEAHost = localStorage.getItem('nmea-server-host');
+    var savedNMEAPort = localStorage.getItem('nmea-server-port');
+    var savedNMEABoatId = localStorage.getItem('nmea-boat-id');
+    var savedNMEABoatPin = localStorage.getItem('nmea-boat-pin');
+    
+    if (savedNMEAHost) nmeaServerHost.value = savedNMEAHost;
+    if (savedNMEAPort) nmeaServerPort.value = savedNMEAPort;
+    if (savedNMEABoatId) nmeaBoatId.value = savedNMEABoatId;
+    if (savedNMEABoatPin) nmeaBoatPin.value = savedNMEABoatPin;
+    
+    // Auto-start NMEA client if it was active
+    if (localStorage.getItem('nmea-client-active') === '1' && savedNMEAHost && savedNMEABoatId && savedNMEABoatPin) {
+      autoStartNMEAClient();
+    }
 
     // Restore tracking state if previously active
     if (localStorage.getItem('tracker-active') === '1') {
@@ -826,5 +882,105 @@
     if (!el) return;
     el.classList.remove('visible');
     el.classList.add('hidden');
+  }
+  
+  // ---------- NMEA Client handlers ----------
+  function onNMEAConnectToggle() {
+    if (NMEAClient.isEnabled()) {
+      // Disconnect
+      NMEAClient.stop();
+      nmeaConnectBtn.textContent = 'Connect';
+      nmeaConnectBtn.classList.remove('connected');
+      trackBtn.classList.remove('active');
+      trackBtn.querySelector('span').textContent = 'Track';
+      localStorage.removeItem('nmea-client-active');
+      showToast('NMEA client disconnected');
+      setTimeout(hideToast, 2000);
+    } else {
+      // Connect
+      var host = nmeaServerHost.value.trim();
+      var port = parseInt(nmeaServerPort.value, 10);
+      var boatId = nmeaBoatId.value.trim();
+      var pin = nmeaBoatPin.value.trim();
+      
+      if (!host || !port || !boatId || !pin) {
+        showToast('Please fill in all fields');
+        setTimeout(hideToast, 2000);
+        return;
+      }
+      
+      if (!host.startsWith('ws://') && !host.startsWith('wss://')) {
+        showToast('Server URL must start with ws:// or wss://');
+        setTimeout(hideToast, 3000);
+        return;
+      }
+      
+      // Save settings
+      localStorage.setItem('nmea-server-host', host);
+      localStorage.setItem('nmea-server-port', port);
+      localStorage.setItem('nmea-boat-id', boatId);
+      localStorage.setItem('nmea-boat-pin', pin);
+      
+      // Configure and start
+      NMEAClient.configure({
+        host: host,
+        port: port,
+        boatId: boatId,
+        pin: pin,
+        onStatusChange: function (status, message) {
+          updateNMEAStatus(status, message);
+        }
+      });
+      
+      if (NMEAClient.start()) {
+        nmeaConnectBtn.textContent = 'Disconnect';
+        nmeaConnectBtn.classList.add('connected');
+        trackBtn.classList.add('active');
+        trackBtn.querySelector('span').textContent = 'NMEA Active';
+        localStorage.setItem('nmea-client-active', '1');
+        showToast('NMEA client connecting...');
+        setTimeout(hideToast, 2000);
+      } else {
+        showToast('Failed to start NMEA client');
+        setTimeout(hideToast, 2000);
+      }
+    }
+  }
+  
+  function updateNMEAStatus(status, message) {
+    nmeaStatus.textContent = message;
+    nmeaStatus.className = 'nmea-status ' + status;
+    
+    // Also show toast for important status changes
+    if (status === 'connected' || status === 'error') {
+      showToast(message);
+      setTimeout(hideToast, 3000);
+    }
+  }
+  
+  function autoStartNMEAClient() {
+    var host = localStorage.getItem('nmea-server-host');
+    var port = parseInt(localStorage.getItem('nmea-server-port'), 10);
+    var boatId = localStorage.getItem('nmea-boat-id');
+    var pin = localStorage.getItem('nmea-boat-pin');
+    
+    if (host && port && boatId && pin) {
+      NMEAClient.configure({
+        host: host,
+        port: port,
+        boatId: boatId,
+        pin: pin,
+        onStatusChange: function (status, message) {
+          updateNMEAStatus(status, message);
+        }
+      });
+      
+      if (NMEAClient.start()) {
+        nmeaConnectBtn.textContent = 'Disconnect';
+        nmeaConnectBtn.classList.add('connected');
+        trackBtn.classList.add('active');
+        trackBtn.querySelector('span').textContent = 'NMEA Active';
+      }
+    }
   }
 })();

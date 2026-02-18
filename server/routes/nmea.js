@@ -151,4 +151,98 @@ router.post('/import/confirm', requireApiKey, async (req, res, next) => {
   }
 });
 
+// ---------- POST /api/nmea/relay – Relay NMEA sentences from smartphone ----------
+// This endpoint receives NMEA sentences from a smartphone that's connected to an external NMEA server.
+// The smartphone acts as a client to the external server and relays the data to our backend.
+router.post('/relay', async (req, res, next) => {
+  try {
+    const { sentences, boatId, pin } = req.body;
+    
+    if (!sentences || !Array.isArray(sentences) || sentences.length === 0) {
+      return res.status(400).json({ error: 'sentences array is required' });
+    }
+    
+    if (!boatId || !pin) {
+      return res.status(400).json({ error: 'boatId and pin are required' });
+    }
+
+    // Validate boat and PIN
+    const boat = await Boat.findOne({ boatId, pin });
+    if (!boat) {
+      return res.status(401).json({ error: 'Invalid boat ID or PIN' });
+    }
+
+    // Import NMEA parsing utilities
+    const { parseSentence, extractPosition } = require('../utils/nmea');
+    
+    // Process sentences and accumulate state
+    let state = {};
+    let positionsToSave = [];
+    
+    for (const sentence of sentences) {
+      const packet = parseSentence(sentence);
+      if (packet) {
+        const position = extractPosition(packet, state);
+        if (position && position.lat != null && position.lon != null) {
+          positionsToSave.push({
+            boatId: boat.boatId,
+            name: boat.name,
+            mmsi: boat.mmsi || '',
+            color: boat.color,
+            lat: position.lat,
+            lon: position.lon,
+            course: Math.round(position.course || 0),
+            speed: Math.round((position.speed || 0) * 10) / 10,
+            status: 'Under way',
+            source: 'nmea-client',
+            timestamp: position.timestamp || new Date(),
+          });
+        }
+      }
+    }
+    
+    // Save positions and broadcast updates
+    if (positionsToSave.length > 0) {
+      // Save the most recent position
+      const latestPosition = positionsToSave[positionsToSave.length - 1];
+      
+      try {
+        await Location.create(latestPosition);
+        
+        // Broadcast to WebSocket clients
+        if (req.app.locals.broadcastLocationUpdate) {
+          req.app.locals.broadcastLocationUpdate(latestPosition);
+        }
+        
+        res.json({ 
+          success: true, 
+          positionsProcessed: sentences.length,
+          positionsSaved: 1
+        });
+      } catch (err) {
+        // Handle duplicate key error gracefully
+        if (err.code === 11000) {
+          res.json({ 
+            success: true, 
+            positionsProcessed: sentences.length,
+            positionsSaved: 0,
+            note: 'Position already exists'
+          });
+        } else {
+          throw err;
+        }
+      }
+    } else {
+      res.json({ 
+        success: true, 
+        positionsProcessed: sentences.length,
+        positionsSaved: 0,
+        note: 'No valid positions extracted'
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
