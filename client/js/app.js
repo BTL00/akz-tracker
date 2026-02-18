@@ -59,9 +59,9 @@
 
     // Cache DOM elements — tracker modal
     trackerModal      = document.getElementById('tracker-modal');
-    trackerNameInput  = document.getElementById('tracker-name');
+    // trackerNameInput removed - using PIN only
     trackerPinInput   = document.getElementById('tracker-pin');
-    trackerColorInput = document.getElementById('tracker-color');
+    // trackerColorInput removed - using boat's stored color
     trackerStartBtn   = document.getElementById('tracker-start-btn');
     trackerCancelBtn  = document.getElementById('tracker-cancel-btn');
     
@@ -780,11 +780,9 @@
       showToast('Tracking stopped');
       setTimeout(hideToast, 2000);
     } else {
-      var savedName  = localStorage.getItem('tracker-name');
-      var savedPin   = localStorage.getItem('tracker-pin');
-      var savedColor = localStorage.getItem('tracker-color');
-      if (savedName && savedPin) {
-        startTrackerWith(savedName, savedPin, savedColor || '#e74c3c');
+      var savedPin = localStorage.getItem('tracker-pin');
+      if (savedPin) {
+        startTrackerWith(savedPin);
       } else {
         showTrackerModal();
       }
@@ -792,15 +790,7 @@
   }
 
   function onTrackerStart() {
-    var name  = trackerNameInput.value.trim();
-    var pin   = trackerPinInput.value.trim();
-    var color = trackerColorInput.value || '#e74c3c';
-    
-    if (!name) {
-      alert('Please enter a boat name');
-      trackerNameInput.focus();
-      return;
-    }
+    var pin = trackerPinInput.value.trim();
     
     if (!/^[0-9]{6}$/.test(pin)) {
       alert('Please enter a valid 6-digit PIN');
@@ -808,22 +798,14 @@
       return;
     }
     
-    localStorage.setItem('tracker-name', name);
     localStorage.setItem('tracker-pin', pin);
-    localStorage.setItem('tracker-color', color);
     hideTrackerModal();
-    startTrackerWith(name, pin, color);
+    startTrackerWith(pin);
   }
 
-  function startTrackerWith(name, pin, color) {
-    var slug   = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    var boatId = 'phone-' + (slug || 'device');
-
+  function startTrackerWith(pin) {
     Tracker.configure({
-      boatId: boatId,
-      name:   name,
-      color:  color,
-      pin:    pin,
+      pin: pin,
       apiKey: apiKey,
     });
 
@@ -846,21 +828,15 @@
   }
 
   function autoStartTracker() {
-    var name  = localStorage.getItem('tracker-name');
-    var pin   = localStorage.getItem('tracker-pin');
-    var color = localStorage.getItem('tracker-color') || '#e74c3c';
-    if (name && pin) {
-      startTrackerWith(name, pin, color);
+    var pin = localStorage.getItem('tracker-pin');
+    if (pin) {
+      startTrackerWith(pin);
     }
   }
 
   function showTrackerModal() {
-    var savedName  = localStorage.getItem('tracker-name');
-    var savedPin   = localStorage.getItem('tracker-pin');
-    var savedColor = localStorage.getItem('tracker-color');
-    if (savedName) trackerNameInput.value = savedName;
+    var savedPin = localStorage.getItem('tracker-pin');
     if (savedPin) trackerPinInput.value = savedPin;
-    if (savedColor) trackerColorInput.value = savedColor;
     trackerModal.classList.remove('hidden');
   }
 

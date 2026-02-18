@@ -1340,6 +1340,10 @@ button.secondary:hover {
     gap: 6px;
 }
 
+.data-table .tracker-status {
+    white-space: nowrap;
+}
+
 .data-table button {
     padding: 4px 10px;
     border: none;

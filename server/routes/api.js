@@ -89,12 +89,10 @@ router.get('/boats/:boatId/history', async (req, res, next) => {
 // ---------- POST /api/location – push a new position ----------
 router.post('/location', async (req, res, next) => {
   try {
-    const { boatId, name, mmsi, color, lat, lon, course, speed, status, pin, source } = req.body;
+    const { lat, lon, course, speed, status, pin, source } = req.body;
 
     // Validate required fields
     const errors = [];
-    if (!boatId) errors.push('boatId is required');
-    if (!name) errors.push('name is required');
     if (!pin) errors.push('pin is required');
     if (lat == null || lat < -90 || lat > 90) errors.push('lat must be between -90 and 90');
     if (lon == null || lon < -180 || lon > 180) errors.push('lon must be between -180 and 180');
@@ -105,23 +103,24 @@ router.post('/location', async (req, res, next) => {
       return res.status(400).json({ errors });
     }
 
-    // Validate PIN for this boat
-    const boat = await Boat.findOne({ boatId, pin });
+    // Lookup boat by PIN (PINs are unique)
+    const boat = await Boat.findOne({ pin });
     if (!boat) {
-      return res.status(401).json({ error: 'Invalid boat ID or PIN' });
+      return res.status(401).json({ error: 'Invalid PIN' });
     }
 
+    // Use boat's stored details
     const doc = await Location.create({
-      boatId,
-      name,
-      mmsi,
-      color,
+      boatId: boat.boatId,
+      name: boat.name,
+      mmsi: boat.mmsi || '',
+      color: boat.color,
       lat,
       lon,
       course,
       speed,
       status: status || 'Under way',
-      source: source || 'at4',
+      source: source || 'phone',
     });
 
     // Broadcast location update via WebSocket
@@ -373,12 +372,48 @@ router.get('/boats/:boatId/export/gpx', requireApiKey, async (req, res, next) =>
 });
 
 // ---------- GET /api/boats-metadata – Get all boat metadata (PIN, API keys, etc.) – Admin only ----------
-router.get('/boats-metadata', requireApiKey, async (_req, res, next) => {
+router.get('/boats-metadata', requireApiKey, async (req, res, next) => {
   try {
     const boats = await Boat.find()
       .select('-_id -__v')
       .lean();
-    res.json(boats);
+
+    // Enrich each boat with tracker status information
+    const enrichedBoats = await Promise.all(boats.map(async (boat) => {
+      // Check AT4 tracker status
+      let at4Status = { active: false, connected: false };
+      if (boat.at4TcpPort && req.app.locals.at4Manager) {
+        const listener = req.app.locals.at4Manager.listeners.get(boat.boatId);
+        if (listener) {
+          at4Status.active = listener.server && listener.server.listening;
+          at4Status.connected = listener.clients.size > 0;
+        }
+      }
+
+      // Check phone tracker status (active if location update within last 5 minutes)
+      let phoneStatus = { active: false };
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const recentPhoneLocation = await Location.findOne({
+        boatId: boat.boatId,
+        source: 'phone',
+        timestamp: { $gte: fiveMinutesAgo }
+      }).select('timestamp').lean();
+
+      if (recentPhoneLocation) {
+        phoneStatus.active = true;
+        phoneStatus.lastUpdate = recentPhoneLocation.timestamp;
+      }
+
+      return {
+        ...boat,
+        trackerStatus: {
+          at4: at4Status,
+          phone: phoneStatus
+        }
+      };
+    }));
+
+    res.json(enrichedBoats);
   } catch (err) {
     next(err);
   }

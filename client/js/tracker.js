@@ -13,9 +13,6 @@ var Tracker = (function () {
   var _onVisibilityChange = null; // bound handler ref
 
   // Identity
-  var _boatId  = '';
-  var _name    = '';
-  var _color   = '#e74c3c';
   var _pin     = '';
   var _apiKey  = '';
 
@@ -29,14 +26,11 @@ var Tracker = (function () {
 
   /**
    * Configure tracker identity.
-   * @param {Object} cfg – { boatId, name, color, pin, apiKey }
+   * @param {Object} cfg – { pin, apiKey }
    */
   function configure(cfg) {
-    _boatId = cfg.boatId || '';
-    _name   = cfg.name   || '';
-    _color  = cfg.color  || '#e74c3c';
     _pin    = cfg.pin    || '';
-    _apiKey = cfg.apiKey  || '';
+    _apiKey = cfg.apiKey || '';
   }
 
   /**
@@ -153,9 +147,6 @@ var Tracker = (function () {
     if (_lat === null || _lon === null) return;
 
     var body = {
-      boatId: _boatId,
-      name:   _name,
-      color:  _color,
       pin:    _pin,
       lat:    _lat,
       lon:    _lon,

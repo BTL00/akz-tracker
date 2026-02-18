@@ -200,6 +200,37 @@ function renderBoatsTable() {
     mmsiTd.textContent = boat.mmsi || '-';
     tr.appendChild(mmsiTd);
 
+    // Tracker status column
+    const statusTd = document.createElement('td');
+    statusTd.className = 'tracker-status';
+    let statusHtml = '<div style="display: flex; gap: 8px; font-size: 12px;">';
+    
+    // AT4 Tracker status
+    if (boat.at4TcpPort) {
+      const at4 = boat.trackerStatus?.at4;
+      if (at4?.connected) {
+        statusHtml += '<span style="color: #4CAF50;" title="AT4 tracker connected">🟢 AT4</span>';
+      } else if (at4?.active) {
+        statusHtml += '<span style="color: #FF9800;" title="AT4 listener active, awaiting connection">🟡 AT4</span>';
+      } else {
+        statusHtml += '<span style="color: #999;" title="AT4 configured but inactive">⚪ AT4</span>';
+      }
+    }
+    
+    // Phone tracker status
+    const phone = boat.trackerStatus?.phone;
+    if (phone?.active) {
+      const lastUpdate = new Date(phone.lastUpdate);
+      const minutesAgo = Math.floor((Date.now() - lastUpdate.getTime()) / 60000);
+      statusHtml += `<span style="color: #4CAF50;" title="Phone tracking active (${minutesAgo}m ago)">🟢 Phone</span>`;
+    } else {
+      statusHtml += '<span style="color: #999;" title="Phone tracking inactive">⚪ Phone</span>';
+    }
+    
+    statusHtml += '</div>';
+    statusTd.innerHTML = statusHtml;
+    tr.appendChild(statusTd);
+
     const actionsTd = document.createElement('td');
     actionsTd.className = 'actions';
     actionsTd.innerHTML = `

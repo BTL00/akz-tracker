@@ -94,18 +94,11 @@
             <!-- GPS Tracking Mode -->
             <div id="tracker-gps-panel" class="tracker-panel">
                 <p>Your phone will send its GPS position to the map every 10 seconds.</p>
-                <div class="field-group">
-                    <label for="tracker-name">Boat / device name</label>
-                    <input id="tracker-name" type="text" placeholder="e.g. Piotr's Phone" autocomplete="off" />
-                </div>
+                <p>Enter your boat's 6-digit PIN to start tracking.</p>
                 <div class="field-group">
                     <label for="tracker-pin">Boat PIN</label>
                     <input id="tracker-pin" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
                         placeholder="6-digit PIN" autocomplete="off" required />
-                </div>
-                <div class="field-group">
-                    <label for="tracker-color">Marker colour</label>
-                    <input id="tracker-color" type="color" value="#e74c3c" />
                 </div>
                 <button id="tracker-start-btn" type="button">Start tracking</button>
             </div>
@@ -240,6 +233,7 @@
                                     <th></th>
                                     <th>Name</th>
                                     <th>MMSI</th>
+                                    <th>Trackers</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>

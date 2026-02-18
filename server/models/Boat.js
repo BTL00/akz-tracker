@@ -31,6 +31,7 @@ const boatSchema = new mongoose.Schema(
     pin: {
       type: String,
       required: true,
+      unique: true,
       index: true,
       match: /^[0-9]{6}$/,
     },
