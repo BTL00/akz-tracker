@@ -413,6 +413,38 @@ function generateOnlineCommandResponse(serial) {
 }
 
 /**
+ * Generate location response packet
+ * @param {number} serial - Serial number from location packet
+ * @returns {Buffer} - Response buffer
+ */
+function generateLocationResponse(serial) {
+  const buffer = Buffer.alloc(10);
+  
+  // Start bits
+  buffer[0] = 0x78;
+  buffer[1] = 0x78;
+  
+  // Length
+  buffer[2] = 0x05;
+  
+  // Protocol (0x22 for location response)
+  buffer[3] = 0x22;
+  
+  // Serial number
+  buffer.writeUInt16BE(serial, 4);
+  
+  // Calculate and write CRC
+  const crc = calculateCRC16(buffer, 2, 6);
+  buffer.writeUInt16BE(crc, 6);
+  
+  // Stop bits
+  buffer[8] = 0x0D;
+  buffer[9] = 0x0A;
+  
+  return buffer;
+}
+
+/**
  * Parse AT4 packet (auto-detect type)
  * @param {Buffer} buffer - Packet buffer
  * @returns {Object|null} - Parsed data or null
