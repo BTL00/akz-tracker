@@ -188,7 +188,7 @@ router.post('/relay', async (req, res, next) => {
             color: boat.color,
             lat: position.lat,
             lon: position.lon,
-            course: Math.round(position.course || 0),
+            course: Math.round(position.course * 10) / 10 || 0,
             speed: Math.round((position.speed || 0) * 10) / 10,
             status: 'Under way',
             source: 'nmea-client',

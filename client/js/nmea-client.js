@@ -150,15 +150,8 @@ var NMEAClient = (function () {
           scheduleReconnect();
         };
       } else {
-        // TCP connection via WebSocket proxy
-        // Note: This requires a WebSocket-to-TCP proxy service
-        // For now, we'll use a proxy approach by connecting to a WebSocket endpoint
-        // that proxies TCP connections
-        
-        // Try to connect using a proxy URL pattern
-        var proxyUrl = 'ws://' + window.location.hostname + ':' + window.location.port + '/nmea-proxy';
-        
-        // Since direct TCP is not available in browsers, we'll provide clear feedback
+        // TCP connection via WebSocket proxy not supported
+        // Since direct TCP is not available in browsers, we provide clear feedback
         notifyStatus('error', 'Direct TCP connections not supported in browsers. Use NMEA server with WebSocket support or a proxy.');
         _enabled = false;
         return;
