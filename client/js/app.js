@@ -376,14 +376,20 @@
 
   // ---------- Expedition selection ----------
   function onExpeditionChange() {
-    var id = expeditionSelect.value;
-    if (!id) {
+    var value = expeditionSelect.value;
+    if (!value) {
       // No expedition selected — back to unfiltered live mode
       currentExpedition = null;
       liveFilterBoatIds = null;
       enterLiveMode();
       return;
     }
+
+    // Parse expedition ID and view type (format: "expeditionId:viewType" or just "expeditionId")
+    var parts = value.split(':');
+    var id = parts[0];
+    // viewType can be 'live' or 'playback' for live expeditions, defaults to 'history' for historical expeditions
+    var viewType = parts[1] || 'history';
 
     // Fetch expedition details to check if it's live or historical
     fetch('/api/expeditions/' + encodeURIComponent(id))
@@ -393,9 +399,12 @@
       })
       .then(function (expedition) {
         currentExpedition = expedition;
-        if (expedition.live) {
-          // Live expedition — filter live view to only show boats in expedition
-          enterLiveFilterMode(expedition);
+        if (expedition.live && viewType === 'live') {
+          // Live expedition — Live view only (no playback bar)
+          enterLiveOnlyMode(expedition);
+        } else if (expedition.live && viewType === 'playback') {
+          // Live expedition — Playback view (historical track with playback controls)
+          enterLivePlaybackMode(expedition);
         } else {
           // Historical expedition — enter playback mode
           enterHistoryMode(expedition.expeditionId);
@@ -462,6 +471,82 @@
         hidePlaybackBar();
         // Continue with live rendering
         fetchAndRender();
+      });
+  }
+
+  function enterLiveOnlyMode(expedition) {
+    mode = 'live';
+    liveFilterBoatIds = expedition.boatIds;
+
+    // Clear any existing playback data
+    Playback.destroy();
+    clearTrackLines();
+
+    // Hide playback bar
+    hidePlaybackBar();
+
+    // Clear and reset UI
+    playBtn.innerHTML = SVG_PLAY;
+    timeDisplay.textContent = '--:--';
+
+    // Show loading toast (will be hidden by fetchAndRender on success)
+    showToast('Loading ' + expedition.name + ' (Live)');
+
+    // Render current live positions
+    fetchAndRender();
+    
+    // Ensure live polling is active (restart if needed)
+    if (!timer) {
+      applyConnectionMode();
+    }
+  }
+
+  function enterLivePlaybackMode(expedition) {
+    mode = 'history';
+    
+    // Pause live polling
+    if (timer) { clearInterval(timer); timer = null; }
+
+    // Stop any running playback and reset UI to defaults
+    Playback.stop();
+    playBtn.innerHTML = SVG_PLAY;
+    timeDisplay.textContent = '--:--';
+    timeSlider.value = 0;
+
+    // Clear live markers & tracks
+    clearBoats();
+    clearTrackLines();
+
+    showToast('Loading ' + expedition.name + ' playback…');
+
+    // Fetch boats and track data
+    Promise.all([
+      fetch(API_BASE + '/api/boats').then(function (res) { return res.json(); }),
+      fetchExpeditionTrack(expedition.expeditionId)
+    ])
+      .then(function (results) {
+        hideToast();
+        var boats = results[0];
+        var result = results[1];
+        var tracks = result.tracks;
+        var range  = getTrackTimeRange(tracks);
+
+        if (range.min === Infinity) {
+          showToast('No track data for this expedition');
+          return;
+        }
+
+        // Load track with boat configurations
+        Playback.loadTrack(tracks, range.min, range.max, boats);
+        updateSliderRange(range.min, range.max);
+
+        // Show playback bar and fit map to track bounds
+        showPlaybackBar();
+        fitMapToTracks(tracks);
+      })
+      .catch(function (err) {
+        console.warn('Failed to load track:', err);
+        showToast('Error loading expedition track');
       });
   }
 

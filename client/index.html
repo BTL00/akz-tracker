@@ -260,17 +260,20 @@
     <div id="toast" class="toast hidden"></div>
 
     <!-- Boat GPX Export Modal -->
-    <div id="boat-export-modal" class="tracker-modal" style="display: none;">
-        <div class="modal-content">
+    <div id="boat-export-modal" class="tracker-modal-overlay hidden">
+        <div class="tracker-modal">
             <h3>Export boat GPX</h3>
             <input type="hidden" id="boat-export-id">
             <p>Exporting GPX for: <strong id="boat-export-name"></strong></p>
-            <label>Start date:
+            <div class="field-group">
+                <label for="boat-export-start">Start date</label>
                 <input type="date" id="boat-export-start" required>
-            </label>
-            <label>End date:
+
+            </div>
+            <div class="field-group">
+                <label for="boat-export-end">End date</label>
                 <input type="date" id="boat-export-end" required>
-            </label>
+            </div>
             <div class="modal-actions">
                 <button onclick="admin.confirmBoatExport()">Confirm export</button>
                 <button class="delete-btn" onclick="admin.cancelBoatExport()">Cancel</button>

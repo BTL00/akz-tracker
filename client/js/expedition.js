@@ -50,11 +50,24 @@ function populateExpeditionSelect(expeditions) {
   while (sel.options.length > 1) sel.remove(1);
 
   expeditions.forEach(function (exp) {
-    var opt = document.createElement('option');
-    opt.value = exp.expeditionId;
-    var badge = exp.live ? ' [LIVE]' : ' [Historical]';
-    opt.textContent = exp.name + badge;
-    sel.appendChild(opt);
+    if (exp.live) {
+      // For live expeditions, add two options: Live and Playback
+      var optLive = document.createElement('option');
+      optLive.value = exp.expeditionId + ':live';
+      optLive.textContent = exp.name + ' - Live';
+      sel.appendChild(optLive);
+
+      var optPlayback = document.createElement('option');
+      optPlayback.value = exp.expeditionId + ':playback';
+      optPlayback.textContent = exp.name + ' - Playback';
+      sel.appendChild(optPlayback);
+    } else {
+      // For historical expeditions, add single option
+      var opt = document.createElement('option');
+      opt.value = exp.expeditionId;
+      opt.textContent = exp.name + ' [Historical]';
+      sel.appendChild(opt);
+    }
   });
 }
 

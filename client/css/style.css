@@ -515,7 +515,8 @@ body.playback-visible .leaflet-bottom.leaflet-left .leaflet-control-scale {
     letter-spacing: 0.04em;
 }
 
-.tracker-modal input[type="text"] {
+.tracker-modal input[type="text"],
+.tracker-modal input[type="date"] {
     width: 100%;
     height: 40px;
     border: none;
@@ -529,7 +530,8 @@ body.playback-visible .leaflet-bottom.leaflet-left .leaflet-control-scale {
     transition: box-shadow 0.2s;
 }
 
-.tracker-modal input[type="text"]:focus {
+.tracker-modal input[type="text"]:focus,
+.tracker-modal input[type="date"]:focus {
     box-shadow: 0 0 0 2px var(--accent);
 }
 
