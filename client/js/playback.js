@@ -10,7 +10,7 @@ var Playback = (function () {
   var _endTime    = 0;      // ms
   var _currentTime = 0;     // ms – virtual playback clock
   var _playing    = false;
-  var _speed      = 50;     // multiplier (matches HTML default)
+  var _speed      = 60;     // multiplier (matches HTML default)
   var _lastFrame  = 0;      // performance.now() of last rAF tick
   var _rafId      = null;
 
@@ -191,7 +191,7 @@ var Playback = (function () {
 
   /**
    * Set playback speed multiplier.
-   * @param {number} s – e.g. 1, 2, 5, 10, 50
+  * @param {number} s – e.g. 1, 10, 60, 240, 480, 1440
    */
   function setSpeed(s) {
     _speed = s;
