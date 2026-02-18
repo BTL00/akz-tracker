@@ -388,7 +388,8 @@
     // Parse expedition ID and view type (format: "expeditionId:viewType" or just "expeditionId")
     var parts = value.split(':');
     var id = parts[0];
-    var viewType = parts[1] || 'history'; // default to history for historical expeditions (no view type suffix)
+    // viewType can be 'live' or 'playback' for live expeditions, defaults to 'history' for historical expeditions
+    var viewType = parts[1] || 'history';
 
     // Fetch expedition details to check if it's live or historical
     fetch('/api/expeditions/' + encodeURIComponent(id))
