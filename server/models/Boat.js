@@ -76,6 +76,10 @@ const boatSchema = new mongoose.Schema(
       enum: ['phone', 'at4', 'gpx', 'nmea-file'],
       default: ['phone', 'at4', 'gpx', 'nmea-file'],
     },
+    live: {
+      type: Boolean,
+      default: true,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

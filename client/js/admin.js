@@ -360,6 +360,14 @@ function renderBoatForm(boatId = null) {
           ${renderSourceCheckboxes(boat)}
         </div>
       </div>
+      <div class="form-group toggle-group">
+        <label>Live on map</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="boat-live" ${boat ? (boat.live !== false ? 'checked' : '') : 'checked'}>
+          <span class="toggle-slider"></span>
+        </label>
+        <span style="font-size:12px;color:#666;">(Hidden boats do not appear in the default live view)</span>
+      </div>
       <div class="form-actions">
         <button class="cancel-btn" onclick="admin.cancelForm()">Cancel</button>
         <button class="submit-btn" onclick="admin.saveBoat(${isEdit})">${isEdit ? 'Update' : 'Create'}</button>
@@ -452,6 +460,7 @@ async function saveBoat(isEdit) {
   const nmeaPortInput = document.getElementById('boat-nmea-port').value.trim();
   const at4PortInput = document.getElementById('boat-at4-port').value.trim();
   const signalkPortInput = document.getElementById('boat-signalk-port').value.trim();
+  const live = document.getElementById('boat-live').checked;
   
   // Collect enabled sources from checkboxes
   const enabledSources = Array.from(
@@ -483,7 +492,7 @@ async function saveBoat(isEdit) {
     return;
   }
 
-  const data = { boatId: id, name, color, mmsi, nmeaTcpPort, at4TcpPort, signalkPort, enabledSources };
+  const data = { boatId: id, name, color, mmsi, nmeaTcpPort, at4TcpPort, signalkPort, enabledSources, live };
 
   try {
     if (isEdit) {
@@ -493,7 +502,7 @@ async function saveBoat(isEdit) {
           'Content-Type': 'application/json',
           'x-api-key': getApiKey()
         },
-        body: JSON.stringify({ name, color, mmsi, nmeaTcpPort, at4TcpPort, signalkPort, enabledSources })
+        body: JSON.stringify({ name, color, mmsi, nmeaTcpPort, at4TcpPort, signalkPort, enabledSources, live })
       });
       if (!response.ok) throw new Error('Failed to update boat');
       

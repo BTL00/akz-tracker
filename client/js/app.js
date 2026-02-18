@@ -348,6 +348,11 @@
           });
         }
 
+        // Hide boats marked as not live
+        boats = boats.filter(function (boat) {
+          return boat.live !== false;
+        });
+
         var shouldFit = autoFit || firstRender;
         firstRender = false;
         updateBoats(map, boats, { fitBounds: shouldFit });
