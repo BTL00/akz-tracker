@@ -89,6 +89,10 @@ body {
     pointer-events: none;
 }
 
+[data-theme="dark"] .toast {
+    color: #ffffff;
+}
+
 .toast.hidden {
     opacity: 0;
 }
@@ -203,10 +207,7 @@ body {
     color: var(--text-primary) !important;
 }
 
-/* Move attribution higher when playback bar is visible */
-body.playback-visible .leaflet-control-attribution {
-    margin-bottom: 72px !important;
-}
+
 
 /* Move scale bar above playback bar when visible */
 body.playback-visible .leaflet-bottom.leaflet-left .leaflet-control-scale {
@@ -221,8 +222,241 @@ body.playback-visible .leaflet-bottom.leaflet-left .leaflet-control-scale {
 
 /* Zoom control: bottom-right spacing */
 .leaflet-bottom.leaflet-right .leaflet-control-zoom {
-    margin-bottom: 24px !important;
+    margin-bottom: 72px !important;
     margin-right: 10px !important;
+}
+
+/* ============================================================
+   Leaflet scale and zoom controls – dark mode styling
+   ============================================================ */
+
+/* Scale control theming */
+.leaflet-control-scale {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 6px 8px !important;
+    margin: 8px !important;
+    max-width: 140px !important;
+}
+
+.leaflet-control-scale-line {
+    color: var(--text-secondary) !important;
+    border-color: var(--text-secondary) !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+    text-shadow: none !important;
+}
+
+[data-theme="light"] .leaflet-control-scale-line {
+    color: #333 !important;
+    border-color: #333 !important;
+}
+
+/* Zoom control theming (+ and - buttons) */
+.leaflet-control-zoom a {
+    background: var(--bg-glass) !important;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    color: var(--text-primary) !important;
+    border: none !important;
+    box-shadow: 0 1px 6px var(--shadow-light) !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    transition: background 0.15s, color 0.15s !important;
+}
+
+.leaflet-control-zoom a:hover {
+    background: var(--button-hover) !important;
+    color: var(--accent) !important;
+}
+
+.leaflet-control-zoom a:active {
+    background: var(--bg-glass-solid) !important;
+}
+
+/* ============================================================
+   File input and dropdown list styling
+   ============================================================ */
+
+/* General select/dropdown styling across the app */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    height: 36px;
+    padding: 0 32px 0 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    padding-right: 32px;
+}
+
+/* Light theme checkmark color */
+[data-theme="light"] select {
+    background-color: var(--bg-primary);
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* Dark theme checkmark color */
+[data-theme="dark"] select {
+    background-color: var(--bg-primary);
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ababab' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+select:hover {
+    background-color: var(--button-bg);
+    border-color: var(--border-light);
+}
+
+select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-shadow);
+}
+
+select:active {
+    background-color: var(--button-hover);
+}
+
+select option {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 8px;
+}
+
+/* Admin form selects */
+.form-group select {
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-shadow);
+}
+
+/* File input styling */
+input[type="file"] {
+    display: none;
+}
+
+/* Styled file input container */
+.file-input-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.file-input-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border: 2px dashed var(--border-light);
+    border-radius: 10px;
+    background: var(--button-bg);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.file-input-label:hover {
+    background: var(--button-hover);
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.file-input-label:active {
+    transform: scale(0.98);
+}
+
+/* File input drag-and-drop states */
+.file-input-label.drag-over {
+    background: var(--accent-shadow);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* Direct file input styling as fallback */
+input[type="file"]::file-selector-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--text-inverse);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background: var(--accent-hover);
+}
+
+/* File input text styling */
+input[type="file"]::file-selector-label {
+    color: var(--text-secondary);
+}
+
+/* When file input is visible inline (some browsers show it) */
+input[type="file"] {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* GPX and NMEA file inputs in admin panel */
+#gpx-file-input,
+#nmea-file-input {
+    display: block;
+    width: 100%;
+    margin: 12px 0;
+    padding: 12px 16px;
+    border: 2px dashed var(--border-light);
+    border-radius: 10px;
+    background: var(--button-bg);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#gpx-file-input:hover,
+#nmea-file-input:hover {
+    background: var(--button-hover);
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+#gpx-file-input:focus,
+#nmea-file-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-shadow);
 }
 
 
@@ -295,7 +529,7 @@ body.playback-visible .leaflet-bottom.leaflet-left .leaflet-control-scale {
    ============================================================ */
 .playback-bar {
     position: fixed;
-    bottom: max(16px, calc(env(safe-area-inset-bottom) + 8px));
+    bottom: max(32px, calc(env(safe-area-inset-bottom) + 8px));
     left: 50%;
     transform: translateX(-50%) translateY(0);
     max-width: 640px;
@@ -346,11 +580,11 @@ body.playback-visible .leaflet-bottom.leaflet-left .leaflet-control-scale {
 }
 
 #expedition-select {
-    max-width: 160px;
+    max-width: 200px;
     min-width: 90px;
     flex-shrink: 0;
     height: 28px;
-    background: var(--bg-glass);
+    background-color: var(--bg-glass);
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     color: var(--text-secondary);
@@ -643,7 +877,6 @@ button.secondary:hover {
     top: 80px;
     left: 12px;
     z-index: 9000;
-    background: var(--bg-glass);
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     box-shadow: 0 2px 12px var(--shadow-light), 0 0 0 0.5px var(--border-medium);
@@ -655,7 +888,6 @@ button.secondary:hover {
     height: 36px;
     border: none;
     border-radius: 12px;
-    background: transparent;
     color: var(--text-primary);
     font-family: inherit;
     font-size: 13px;
@@ -680,17 +912,16 @@ button.secondary:hover {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    width: 200px;
+    width: 160px;
     pointer-events: auto;
 }
 
 #connection-controls > select {
-    background: var(--bg-glass);
+    background-color: var(--bg-glass);
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     box-shadow: 0 2px 12px var(--shadow-light), 0 0 0 0.5px var(--border-medium);
     border-radius: 12px;
-    padding: 0;
 }
 
 #connection-mode-select {
@@ -808,10 +1039,28 @@ button.secondary:hover {
     line-height: 1;
     cursor: pointer;
     transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
 }
 
 .admin-header .close-btn:hover {
     background: var(--button-hover);
+}
+
+/* Refresh button animation */
+#admin-refresh-btn.refreshing svg {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .admin-tabs {
@@ -1267,6 +1516,28 @@ button.secondary:hover {
     .data-table th,
     .data-table td {
         padding: 8px;
+    }
+
+    /* Hide Dates column on mobile */
+    .data-table th:nth-child(3),
+    .data-table td:nth-child(3) {
+        display: none;
+    }
+
+    /* Adjust Actions column spacing on mobile */
+    .data-table th:nth-child(4),
+    .data-table td:nth-child(4) {
+        font-size: 11px;
+    }
+
+    .data-table .actions {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .data-table button {
+        padding: 3px 8px;
+        font-size: 11px;
     }
 
     .admin-form {
