@@ -21,6 +21,9 @@
   var SVG_PLAY  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>';
   var SVG_PAUSE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>';
 
+  // Web Worker for track loading
+  var trackWorker = null;
+  
   // DOM refs
   var fitBtn, trackBtn, adminBtn, playbackBar;
   var expeditionSelect, playBtn, speedSelect;
@@ -39,6 +42,13 @@
       console.warn('Map initialization failed - map features will be unavailable:', err.message);
       console.warn('This can happen if Leaflet library fails to load from CDN.');
       // Continue without map - other features should still work
+    }
+
+    // Initialize track loader worker
+    try {
+      trackWorker = new Worker('js/track-fetcher.worker.js');
+    } catch (err) {
+      console.warn('Worker not available, will load on main thread');
     }
 
     // Cache DOM elements — floating buttons
@@ -532,7 +542,7 @@
     // Fetch boats and track data
     Promise.all([
       fetch(API_BASE + '/api/boats').then(function (res) { return res.json(); }),
-      fetchExpeditionTrack(expedition.expeditionId)
+      fetchExpeditionTrackWithWorker(expedition.expeditionId)
     ])
       .then(function (results) {
         var boats = results[0];
@@ -623,7 +633,7 @@
     // Fetch boats and track data
     Promise.all([
       fetch(API_BASE + '/api/boats').then(function (res) { return res.json(); }),
-      fetchExpeditionTrack(expedition.expeditionId)
+      fetchExpeditionTrackWithWorker(expedition.expeditionId)
     ])
       .then(function (results) {
         hideToast();
@@ -672,7 +682,7 @@
     // Fetch boats and track data
     Promise.all([
       fetch(API_BASE + '/api/boats').then(function (res) { return res.json(); }),
-      fetchExpeditionTrack(expeditionId)
+      fetchExpeditionTrackWithWorker(expeditionId)
     ])
       .then(function (results) {
         hideToast();
@@ -1061,5 +1071,27 @@
       // Hide when online and queue is empty
       badge.classList.add('hidden');
     }
+  }
+
+  /**
+   * Fetch expedition track using worker if available, otherwise use main thread
+   */
+  function fetchExpeditionTrackWithWorker(expeditionId) {
+    return new Promise(function (resolve, reject) {
+      if (trackWorker) {
+        var listener = function (event) {
+          trackWorker.removeEventListener('message', listener);
+          if (event.data.success) {
+            resolve(event.data.data);
+          } else {
+            reject(new Error(event.data.error));
+          }
+        };
+        trackWorker.addEventListener('message', listener);
+        trackWorker.postMessage(expeditionId);
+      } else {
+        fetchExpeditionTrack(expeditionId).then(resolve).catch(reject);
+      }
+    });
   }
 })();
