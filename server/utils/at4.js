@@ -328,8 +328,11 @@ function parseLocationPacket(buffer) {
   const isNorth = (status & 0x0004) !== 0;
   
   // Apply hemisphere corrections
+  // If North bit is NOT set, it's South - negate latitude
   const finalLat = isNorth ? lat : -lat;
   const finalLon = isWest ? -lon : lon;
+  
+  console.log(`[Location] Raw=(${lat.toFixed(6)}, ${lon.toFixed(6)}), Status=0x${status.toString(16).padStart(3, '0')} (north=${isNorth}, west=${isWest}) -> Final=(${finalLat.toFixed(6)}, ${finalLon.toFixed(6)})`);
   
   // MCC (Mobile Country Code) - 2 bytes
   const mcc = buffer.readUInt16BE(offset);
