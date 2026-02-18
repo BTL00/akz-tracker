@@ -44,6 +44,14 @@ const boatSchema = new mongoose.Schema(
       min: 13110,
       max: 13129,
     },
+    signalkUrl: {
+      type: String,
+      default: null,
+    },
+    signalkToken: {
+      type: String,
+      default: null,
+    },
     enabledSources: {
       type: [String],
       enum: ['phone', 'tracker', 'gpx', 'nmea', 'signalk', 'ais'],

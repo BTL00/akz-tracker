@@ -145,7 +145,7 @@ router.post('/location', async (req, res, next) => {
 // ---------- POST /api/boats – create a new boat ----------
 router.post('/boats', requireApiKey, async (req, res, next) => {
   try {
-    const { boatId, name, color, mmsi, nmeaTcpPort, signalkPort } = req.body;
+    const { boatId, name, color, mmsi, nmeaTcpPort, signalkPort, signalkUrl, signalkToken } = req.body;
 
     // Validate required fields
     const errors = [];
@@ -179,14 +179,16 @@ router.post('/boats', requireApiKey, async (req, res, next) => {
       apiKey,
       nmeaTcpPort: nmeaTcpPort || null,
       signalkPort: signalkPort || null,
+      signalkUrl: signalkUrl || null,
+      signalkToken: signalkToken || null,
     });
 
-    // Start services for this boat if managers are available and ports are configured
+    // Start services for this boat if managers are available and configs are set
     if (nmeaTcpPort && req.app.locals.nmeaManager) {
       await req.app.locals.nmeaManager.startForBoat(boatId, nmeaTcpPort, mmsi);
     }
-    if (signalkPort && req.app.locals.signalkManager) {
-      await req.app.locals.signalkManager.startForBoat(boatId, signalkPort, mmsi);
+    if ((signalkUrl || signalkPort) && req.app.locals.signalkManager) {
+      await req.app.locals.signalkManager.startForBoat(doc);
     }
 
     res.status(201).json({
@@ -210,7 +212,7 @@ router.post('/boats', requireApiKey, async (req, res, next) => {
 router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
   try {
     const { boatId } = req.params;
-    const { name, color, mmsi, nmeaTcpPort, signalkPort } = req.body;
+    const { name, color, mmsi, nmeaTcpPort, signalkPort, signalkUrl, signalkToken } = req.body;
 
     // Validate port ranges if provided
     if (nmeaTcpPort !== undefined && nmeaTcpPort !== null) {
@@ -230,6 +232,8 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
     if (mmsi !== undefined) updates.mmsi = mmsi;
     if (nmeaTcpPort !== undefined) updates.nmeaTcpPort = nmeaTcpPort;
     if (signalkPort !== undefined) updates.signalkPort = signalkPort;
+    if (signalkUrl !== undefined) updates.signalkUrl = signalkUrl;
+    if (signalkToken !== undefined) updates.signalkToken = signalkToken;
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'No valid fields to update' });
@@ -259,11 +263,11 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
       );
     }
 
-    // Restart services if ports changed
+    // Restart services if configs changed
     if (nmeaTcpPort !== undefined && req.app.locals.nmeaManager) {
       await req.app.locals.nmeaManager.restartForBoat(boatId);
     }
-    if (signalkPort !== undefined && req.app.locals.signalkManager) {
+    if ((signalkPort !== undefined || signalkUrl !== undefined || signalkToken !== undefined) && req.app.locals.signalkManager) {
       await req.app.locals.signalkManager.restartForBoat(boatId);
     }
 
@@ -274,6 +278,8 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
       mmsi: boat.mmsi,
       nmeaTcpPort: boat.nmeaTcpPort,
       signalkPort: boat.signalkPort,
+      signalkUrl: boat.signalkUrl,
+      // Don't expose signalkToken in response for security
       message: 'Boat updated successfully'
     });
   } catch (err) {

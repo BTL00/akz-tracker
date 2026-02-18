@@ -12,19 +12,24 @@ class SignalKServiceManager {
   }
 
   /**
-   * Start SignalK services for all boats that have a configured port
-   * Note: Each boat gets its own SignalK connection to a different port
+   * Start SignalK services for all boats that have a configured SignalK URL
+   * Note: Each boat gets its own SignalK connection
    */
   async startAll() {
     try {
+      // Find boats with either per-boat URL or that can use global config
       const boats = await Boat.find({
-        signalkPort: { $exists: true, $ne: null }
+        $or: [
+          { signalkUrl: { $exists: true, $ne: null, $ne: '' } },
+          // If baseUrl is set globally and boat has port, use it
+          ...(this.baseUrl ? [{ signalkPort: { $exists: true, $ne: null } }] : [])
+        ]
       });
 
       console.log(`Starting SignalK services for ${boats.length} boat(s)...`);
 
       for (const boat of boats) {
-        await this.startForBoat(boat.boatId, boat.signalkPort, boat.mmsi);
+        await this.startForBoat(boat);
       }
 
       console.log(`SignalK service manager started with ${this.services.size} service(s)`);
@@ -35,22 +40,55 @@ class SignalKServiceManager {
 
   /**
    * Start SignalK service for a specific boat
+   * @param {Object|string} boatOrId - Boat object or boatId string
+   * @param {number} [legacyPort] - Legacy parameter (ignored if boat object passed)
+   * @param {string} [legacyMmsi] - Legacy parameter (ignored if boat object passed)
    */
-  async startForBoat(boatId, port, mmsi) {
+  async startForBoat(boatOrId, legacyPort, legacyMmsi) {
     try {
-      // Stop existing service if any
-      this.stopForBoat(boatId);
+      // Support both new (boat object) and legacy (separate params) calling styles
+      let boat;
+      if (typeof boatOrId === 'string') {
+        // Legacy: fetch boat from database
+        boat = await Boat.findOne({ boatId: boatOrId });
+        if (!boat) {
+          console.error(`Boat ${boatOrId} not found`);
+          return;
+        }
+      } else {
+        // New: boat object passed directly
+        boat = boatOrId;
+      }
 
-      // Construct URL with boat-specific port
-      const url = this.baseUrl.replace(/:\d+/, `:${port}`);
+      // Stop existing service if any
+      this.stopForBoat(boat.boatId);
+
+      // Determine URL and token for this boat
+      let url, token;
+      
+      if (boat.signalkUrl) {
+        // Use per-boat configuration
+        url = boat.signalkUrl;
+        token = boat.signalkToken || '';
+        console.log(`Using per-boat SignalK config for ${boat.boatId}`);
+      } else if (this.baseUrl && boat.signalkPort) {
+        // Fallback to global URL with boat-specific port
+        url = this.baseUrl.replace(/:\d+/, `:${boat.signalkPort}`);
+        token = this.token;
+        console.log(`Using global SignalK URL with per-boat port for ${boat.boatId}`);
+      } else {
+        console.log(`No SignalK configuration for boat ${boat.boatId}, skipping`);
+        return;
+      }
 
       // Create and start new service
-      const service = new SignalKService(url, this.token, this.broadcastFunc);
+      const service = new SignalKService(url, token, this.broadcastFunc);
       await service.start();
 
-      this.services.set(boatId, service);
-      console.log(`SignalK service started for boat ${boatId} on ${url} (MMSI: ${mmsi || 'none'})`);
+      this.services.set(boat.boatId, service);
+      console.log(`SignalK service started for boat ${boat.boatId} on ${url} (MMSI: ${boat.mmsi || 'none'})`);
     } catch (err) {
+      const boatId = typeof boatOrId === 'string' ? boatOrId : boatOrId.boatId;
       console.error(`Error starting SignalK service for boat ${boatId}:`, err.message);
     }
   }
@@ -73,12 +111,19 @@ class SignalKServiceManager {
   async restartForBoat(boatId) {
     try {
       const boat = await Boat.findOne({ boatId });
-      if (!boat || !boat.signalkPort) {
+      if (!boat) {
         this.stopForBoat(boatId);
         return;
       }
 
-      await this.startForBoat(boatId, boat.signalkPort, boat.mmsi);
+      // Check if boat has SignalK configuration
+      const hasConfig = boat.signalkUrl || (this.baseUrl && boat.signalkPort);
+      if (!hasConfig) {
+        this.stopForBoat(boatId);
+        return;
+      }
+
+      await this.startForBoat(boat);
     } catch (err) {
       console.error(`Error restarting SignalK service for boat ${boatId}:`, err.message);
     }
