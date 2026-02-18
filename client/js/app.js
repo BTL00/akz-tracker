@@ -32,7 +32,13 @@
 
   // ---------- Bootstrap ----------
   document.addEventListener('DOMContentLoaded', function () {
-    map = initMap('map');
+    // Try to initialize map, but don't fail if Leaflet isn't available
+    try {
+      map = initMap('map');
+    } catch (err) {
+      console.warn('Map initialization failed:', err.message);
+      // Continue without map - other features should still work
+    }
 
     // Cache DOM elements — floating buttons
     fitBtn        = document.getElementById('fit-btn');
