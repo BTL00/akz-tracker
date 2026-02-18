@@ -6,8 +6,9 @@ const Location = require('../models/Location');
 const Boat = require('../models/Boat');
 
 class AT4Listener {
-  constructor(port = 21100, broadcastFunc = null) {
+  constructor(port = 21100, assignedBoatId = null, broadcastFunc = null) {
     this.port = port;
+    this.assignedBoatId = assignedBoatId; // boatId assigned to this port by admin
     this.server = null;
     this.clients = new Map(); // Map socket to { imei, boatId, buffer }
     this.broadcastFunc = broadcastFunc; // WebSocket broadcast function
@@ -15,12 +16,12 @@ class AT4Listener {
 
   start() {
     this.server = net.createServer((socket) => {
-      console.log('AT4 client connected:', socket.remoteAddress);
+      console.log(`[port ${this.port}] AT4 client connected: ${socket.remoteAddress}`);
       
-      // Initialize client state
+      // Initialize client state with pre-assigned boatId from port mapping
       this.clients.set(socket, {
         imei: null,
-        boatId: null,
+        boatId: this.assignedBoatId,
         buffer: Buffer.alloc(0),
       });
 
@@ -30,22 +31,22 @@ class AT4Listener {
 
       socket.on('end', () => {
         const clientData = this.clients.get(socket);
-        console.log('AT4 client disconnected:', clientData?.imei || 'unknown');
+        console.log(`[port ${this.port}] AT4 client disconnected: ${clientData?.imei || 'unknown'}`);
         this.clients.delete(socket);
       });
 
       socket.on('error', (err) => {
-        console.error('AT4 client error:', err.message);
+        console.error(`[port ${this.port}] AT4 client error:`, err.message);
         this.clients.delete(socket);
       });
     });
 
     this.server.listen(this.port, () => {
-      console.log(`AT4 TCP listener active on port ${this.port}`);
+      console.log(`[port ${this.port}] AT4 TCP listener active (boat: ${this.assignedBoatId || 'unassigned'})`);
     });
 
     this.server.on('error', (err) => {
-      console.error('AT4 server error:', err);
+      console.error(`[port ${this.port}] AT4 server error:`, err);
     });
   }
 
@@ -141,10 +142,15 @@ class AT4Listener {
         console.warn(`[${clientData.imei || 'unknown'}] ⚠ No response for ${parsed.type}`);
       }
 
-      // Store IMEI from login packet
+      // Store IMEI from login packet and update boat if assigned
       if (parsed.type === 'login' && parsed.imei) {
         clientData.imei = parsed.imei;
-        console.log(`[${clientData.imei}] ✓✓✓ LOGIN SUCCESSFUL - Serial from device: 0x${parsed.serial.toString(16).padStart(4, '0')}`);
+        console.log(`[${clientData.imei}] ✓✓✓ LOGIN SUCCESSFUL - Serial: 0x${parsed.serial.toString(16).padStart(4, '0')}`);
+        
+        // Update boat's IMEI if this port is assigned to a boat
+        if (clientData.boatId) {
+          await this.updateBoatImei(clientData.boatId, parsed.imei);
+        }
       }
 
       // Handle different packet types
@@ -187,19 +193,46 @@ class AT4Listener {
     console.log(`AT4 heartbeat from IMEI ${clientData.imei}: voltage=${parsed.voltage}V, signal=${signalLabel}`);
   }
 
+  async updateBoatImei(boatId, imei) {
+    try {
+      const boat = await Boat.findOne({ boatId });
+      if (!boat) {
+        console.warn(`[${imei}] Boat not found: ${boatId}`);
+        return;
+      }
+
+      const oldImei = boat.imei || '(none)';
+      boat.imei = imei;
+      await boat.save();
+      console.log(`[${imei}] ✓ Updated boat "${boat.name}" IMEI: ${oldImei} → ${imei}`);
+    } catch (err) {
+      console.error(`Error updating boat IMEI:`, err.message);
+    }
+  }
+
   async handleLocation(clientData, parsed) {
     try {
-      // Accept any location data that comes to the port, regardless of IMEI/MMSI matching
-      const boatId = clientData.imei || 'unknown';
-      
+      // If no boat assigned to this port, log warning but don't save
+      if (!clientData.boatId) {
+        console.warn(`[${clientData.imei}] Location packet received but no boat assigned to this port`);
+        return;
+      }
+
+      // Get boat info for location metadata
+      const boat = await Boat.findOne({ boatId: clientData.boatId });
+      if (!boat) {
+        console.warn(`[${clientData.imei}] Boat not found: ${clientData.boatId}`);
+        return;
+      }
+
       console.log(`[${clientData.imei}] ✓ Got location: (${parsed.lat}, ${parsed.lon}) speed=${parsed.speed}kt course=${parsed.course}°`);
       
-      // Create location document
+      // Save location under the assigned boat
       const location = await Location.create({
-        boatId: boatId,
-        name: `AT4-${clientData.imei}`,
-        mmsi: clientData.imei,
-        color: '#0066FF',
+        boatId: boat.boatId,
+        name: boat.name,
+        mmsi: boat.mmsi,
+        color: boat.color,
         lat: parsed.lat,
         lon: parsed.lon,
         course: Math.round(parsed.course || 0),
@@ -209,7 +242,7 @@ class AT4Listener {
         timestamp: parsed.timestamp || new Date(),
       });
 
-      console.log(`[${clientData.imei}] ✓ Saved AT4 position`);
+      console.log(`[${clientData.imei}] ✓ Saved location for boat "${boat.name}"`);
 
       // Broadcast via WebSocket if available
       if (this.broadcastFunc) {
@@ -228,7 +261,7 @@ class AT4Listener {
         });
       }
     } catch (err) {
-      console.error(`[${clientData.imei}] Error saving AT4 position:`, err.message);
+      console.error(`[${clientData.imei}] Error saving AT4 location:`, err.message);
     }
   }
 }

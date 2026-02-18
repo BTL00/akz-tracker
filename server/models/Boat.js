@@ -28,6 +28,10 @@ const boatSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    imei: {
+      type: String,
+      default: '',
+    },
     pin: {
       type: String,
       required: true,

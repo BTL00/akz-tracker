@@ -6,6 +6,7 @@ const Boat = require('../models/Boat');
 class AT4ListenerManager {
   constructor(broadcastFunc = null) {
     this.listeners = new Map(); // boatId -> AT4Listener instance
+    this.portToBoatId = new Map(); // port -> boatId for reverse lookup
     this.broadcastFunc = broadcastFunc;
   }
 
@@ -38,12 +39,13 @@ class AT4ListenerManager {
       // Stop existing listener if any
       this.stopForBoat(boatId);
 
-      // Create and start new listener
-      const listener = new AT4Listener(port, this.broadcastFunc);
+      // Create and start new listener with boatId context
+      const listener = new AT4Listener(port, boatId, this.broadcastFunc);
       listener.start();
 
       this.listeners.set(boatId, listener);
-      console.log(`AT4 listener started for boat ${boatId} on port ${port} (MMSI/IMEI: ${mmsi || 'none'})`);
+      this.portToBoatId.set(port, boatId);
+      console.log(`AT4 listener started for boat ${boatId} on port ${port} (MMSI: ${mmsi || 'none'})`);
     } catch (err) {
       console.error(`Error starting AT4 listener for boat ${boatId}:`, err.message);
     }
@@ -55,6 +57,13 @@ class AT4ListenerManager {
   stopForBoat(boatId) {
     const listener = this.listeners.get(boatId);
     if (listener) {
+      // Remove port mapping
+      for (const [port, bid] of this.portToBoatId.entries()) {
+        if (bid === boatId) {
+          this.portToBoatId.delete(port);
+          break;
+        }
+      }
       listener.stop();
       this.listeners.delete(boatId);
       console.log(`AT4 listener stopped for boat ${boatId}`);
