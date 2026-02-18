@@ -123,28 +123,28 @@ class AT4Listener {
 
   async processPacket(socket, clientData, packet) {
     try {
-      console.log(`[${clientData.imei || 'unknown'}] Processing packet (${packet.length} bytes): ${packet.toString('hex')}`);
-      
       const parsed = parsePacket(packet);
       
       if (!parsed) {
-        console.warn(`[${clientData.imei || 'unknown'}] Failed to parse AT4 packet: ${packet.toString('hex')}`);
+        console.warn(`[${clientData.imei || 'unknown'}] ❌ Failed to parse AT4 packet: ${packet.toString('hex')}`);
         return;
       }
 
-      console.log(`[${clientData.imei || 'unknown'}] Parsed packet type: ${parsed.type}, protocol: 0x${parsed.protocolNumber ? parsed.protocolNumber.toString(16).toUpperCase() : 'unknown'}`);
+      console.log(`[${clientData.imei || 'unknown'}] ✓ Parsed type=${parsed.type} protocol=0x${parsed.protocolNumber ? parsed.protocolNumber.toString(16).toUpperCase() : 'unknown'}`);
 
       // Generate and send response
       const response = generateResponse(parsed);
       if (response) {
         socket.write(response);
-        console.log(`[${clientData.imei || 'unknown'}] ✓ Sent response for ${parsed.type} packet`);
+        console.log(`[${clientData.imei || 'unknown'}] ✓✓ SENT RESPONSE (${response.length} bytes): ${response.toString('hex')}`);
+      } else {
+        console.warn(`[${clientData.imei || 'unknown'}] ⚠ No response for ${parsed.type}`);
       }
 
       // Store IMEI from login packet
       if (parsed.type === 'login' && parsed.imei) {
         clientData.imei = parsed.imei;
-        console.log(`[${clientData.imei}] ✓ Login successful - waiting for location/heartbeat data...`);
+        console.log(`[${clientData.imei}] ✓✓✓ LOGIN SUCCESSFUL - Serial from device: 0x${parsed.serial.toString(16).padStart(4, '0')}`);
       }
 
       // Handle different packet types
