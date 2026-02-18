@@ -56,6 +56,7 @@
     speedSelect      = document.getElementById('speed-select');
     timeSlider       = document.getElementById('time-slider');
     timeDisplay      = document.getElementById('time-display');
+    var skipIdleCheckbox = document.getElementById('skip-idle-checkbox');
 
     // Cache DOM elements — tracker modal
     trackerModal      = document.getElementById('tracker-modal');
@@ -207,6 +208,9 @@
     playBtn.addEventListener('click', onPlayPause);
     speedSelect.addEventListener('change', onSpeedChange);
     timeSlider.addEventListener('input', onSliderInput);
+    skipIdleCheckbox.addEventListener('change', function () {
+      Playback.setSkipIdle(skipIdleCheckbox.checked);
+    });
 
     // ---------- Floating button: track device ----------
     // NMEA tracker tabs (commented out for simplified GUI)

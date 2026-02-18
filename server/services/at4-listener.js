@@ -124,6 +124,7 @@ class AT4Listener {
       const parsed = parsePacket(packet);
       
       if (!parsed) {
+        console.warn('Raw packet:', packet.toString('hex'));
         console.warn('Failed to parse AT4 packet');
         return;
       }
@@ -174,11 +175,6 @@ class AT4Listener {
   }
 
   async handleHeartbeat(clientData, parsed) {
-    if (!clientData.imei) {
-      console.warn('Received heartbeat before login');
-      return;
-    }
-
     const signalLabels = ['no signal', 'extremely weak', 'very weak', 'good', 'strong'];
     const signalLabel = signalLabels[parsed.signalStrength] || 'unknown';
     
@@ -187,39 +183,15 @@ class AT4Listener {
 
   async handleLocation(clientData, parsed) {
     try {
-      if (!clientData.imei) {
-        console.warn('Received location before login');
-        return;
-      }
-
-      // Look up boat by IMEI (stored in mmsi field) or apiKey
-      // For AT4 devices, we'll use the boatId/apiKey system
-      // The device IMEI should be registered in the boat's mmsi or apiKey field
+      // Accept any location data that comes to the port, regardless of IMEI/MMSI matching
+      const boatId = clientData.imei || 'unknown';
       
-      let boat = null;
-      
-      // Try to find boat by MMSI (if IMEI is stored there)
-      boat = await Boat.findOne({ mmsi: clientData.imei });
-      
-      // If not found by MMSI, try to find by boatId if we already have it
-      if (!boat && clientData.boatId) {
-        boat = await Boat.findOne({ boatId: clientData.boatId });
-      }
-      
-      if (!boat) {
-        console.warn(`Received location for unknown IMEI: ${clientData.imei}. Please register this IMEI in a boat's MMSI field.`);
-        return;
-      }
-
-      // Cache boatId for subsequent packets
-      clientData.boatId = boat.boatId;
-
       // Create location document
       const location = await Location.create({
-        boatId: boat.boatId,
-        name: boat.name,
-        mmsi: boat.mmsi,
-        color: boat.color,
+        boatId: boatId,
+        name: `AT4-${clientData.imei}`,
+        mmsi: clientData.imei,
+        color: '#0066FF',
         lat: parsed.lat,
         lon: parsed.lon,
         course: Math.round(parsed.course || 0),
@@ -229,7 +201,7 @@ class AT4Listener {
         timestamp: parsed.timestamp || new Date(),
       });
 
-      console.log(`Saved AT4 position for ${boat.name} (IMEI: ${clientData.imei})`);
+      console.log(`Saved AT4 position for IMEI: ${clientData.imei} at (${parsed.lat}, ${parsed.lon})`);
 
       // Broadcast via WebSocket if available
       if (this.broadcastFunc) {

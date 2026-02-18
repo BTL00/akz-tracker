@@ -629,6 +629,16 @@ function renderGPXMapping(gpxData) {
   mappingList.innerHTML = '';
 
   gpxData.tracks.forEach((track, idx) => {
+    const totalPoints = track.points;
+    
+    // Calculate estimated point reductions for each sampling mode
+    const reductions = {
+      'none': totalPoints,
+      '1min': Math.max(1, Math.ceil(totalPoints / 60)),
+      '10min': Math.max(1, Math.ceil(totalPoints / 600)),
+      '1hour': Math.max(1, Math.ceil(totalPoints / 3600))
+    };
+
     const div = document.createElement('div');
     div.className = 'gpx-track-mapping';
     div.innerHTML = `
@@ -639,14 +649,16 @@ function renderGPXMapping(gpxData) {
           ${track.startTime ? `<span>${new Date(track.startTime).toLocaleString()}</span>` : ''}
         </div>
         <div class="mapping-controls">
-          <label>Map to boat:</label>
-          <select id="track-${idx}-boat" class="track-boat-select" data-track-idx="${idx}">
-            <option value="">-- Select boat --</option>
-            ${allBoats.map(boat => `
-              <option value="${boat.boatId}">${escapeHtml(boat.name)} (${boat.boatId})</option>
-            `).join('')}
+          <label>Boat PIN:</label>
+          <input type="text" id="track-${idx}-pin" placeholder="6-digit PIN" maxlength="6" pattern="[0-9]{6}" />
+          
+          <label>Re-sampling:</label>
+          <select id="track-${idx}-resample" class="track-resample-select" data-track-idx="${idx}">
+            <option value="none">No re-sampling (${reductions['none']} points)</option>
+            <option value="1min">1 minute (≈${reductions['1min']} points)</option>
+            <option value="10min">10 minutes (≈${reductions['10min']} points)</option>
+            <option value="1hour">1 hour (≈${reductions['1hour']} points)</option>
           </select>
-          <input type="text" id="track-${idx}-pin" placeholder="Boat PIN" maxlength="6" pattern="[0-9]{6}" />
         </div>
       </div>
     `;
@@ -662,31 +674,31 @@ async function confirmGPXImport() {
     return;
   }
 
-  // Collect mapping (allow skipping tracks by leaving boat dropdown empty)
+  // Collect mapping (PIN and resampling mode)
   const mapping = {};
   let valid = true;
   let hasAtLeastOne = false;
 
   parsedGPXData.tracks.forEach((track, idx) => {
-    const boatSelect = document.getElementById(`track-${idx}-boat`);
     const pinInput = document.getElementById(`track-${idx}-pin`);
-    const boatId = boatSelect.value;
+    const resampleSelect = document.getElementById(`track-${idx}-resample`);
     const pin = pinInput.value.trim();
+    const resamplingMode = resampleSelect.value;
 
-    // Allow skipping track by leaving boat dropdown empty
-    if (!boatId) {
+    // Allow skipping track by leaving PIN empty
+    if (!pin) {
       return; // Skip this track
     }
 
     hasAtLeastOne = true;
 
     if (!/^[0-9]{6}$/.test(pin)) {
-      alert(`Invalid PIN for track ${idx + 1} (${track.name}). Must be 6 digits or leave boat empty to skip.`);
+      alert(`Invalid PIN for track ${idx + 1} (${track.name}). Must be 6 digits or leave empty to skip.`);
       valid = false;
       return;
     }
 
-    mapping[idx] = { boatId, pin };
+    mapping[idx] = { pin, resamplingMode };
   });
 
   if (!valid) {
@@ -694,7 +706,7 @@ async function confirmGPXImport() {
   }
 
   if (!hasAtLeastOne) {
-    alert('No tracks selected for import. Please select at least one boat or cancel the import.');
+    alert('No tracks selected for import. Please enter at least one PIN or cancel the import.');
     return;
   }
 

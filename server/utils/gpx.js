@@ -169,8 +169,91 @@ function calculateCourse(lat1, lon1, lat2, lon2) {
   return Math.round((brng + 360) % 360);
 }
 
+/**
+ * Resample GPX track using time-bucket decimation.
+ * Keeps only the point closest to each interval boundary.
+ * @param {Object} track - Track object with segments and points
+ * @param {String} samplingMode - 'none', '1min', '10min', or '1hour'
+ * @returns {Object} - Resampled track
+ */
+function resampleGPXTrack(track, samplingMode) {
+  if (samplingMode === 'none') {
+    return track;
+  }
+
+  // Map sampling mode to interval in milliseconds
+  const intervals = {
+    '1min': 60 * 1000,
+    '10min': 10 * 60 * 1000,
+    '1hour': 60 * 60 * 1000,
+  };
+
+  const interval = intervals[samplingMode];
+  if (!interval) {
+    return track;
+  }
+
+  // Resample each segment
+  const resampledSegments = track.segments.map(segment => {
+    if (!segment.points || segment.points.length === 0) {
+      return segment;
+    }
+
+    // Sort points by time to ensure chronological order
+    const sortedPoints = [...segment.points].sort((a, b) => {
+      const timeA = a.time ? new Date(a.time).getTime() : 0;
+      const timeB = b.time ? new Date(b.time).getTime() : 0;
+      return timeA - timeB;
+    });
+
+    if (sortedPoints.length === 0) {
+      return segment;
+    }
+
+    // Build time buckets and find closest point to each boundary
+    const firstTime = new Date(sortedPoints[0].time).getTime();
+    const lastTime = new Date(sortedPoints[sortedPoints.length - 1].time).getTime();
+    
+    const buckets = new Map(); // bucket number -> closest point
+    
+    sortedPoints.forEach(point => {
+      if (!point.time) return;
+      
+      const pointTime = new Date(point.time).getTime();
+      const bucketNum = Math.floor((pointTime - firstTime) / interval);
+      const bucketBoundary = firstTime + (bucketNum * interval);
+      
+      // Keep point if it's the first in this bucket or closer to boundary than existing
+      if (!buckets.has(bucketNum)) {
+        buckets.set(bucketNum, point);
+      } else {
+        const existing = buckets.get(bucketNum);
+        const existingTime = new Date(existing.time).getTime();
+        const existingDist = Math.abs(existingTime - bucketBoundary);
+        const newDist = Math.abs(pointTime - bucketBoundary);
+        
+        if (newDist < existingDist) {
+          buckets.set(bucketNum, point);
+        }
+      }
+    });
+
+    // Convert map to sorted array
+    const resampledPoints = Array.from(buckets.values())
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+
+    return { points: resampledPoints };
+  });
+
+  return {
+    name: track.name,
+    segments: resampledSegments,
+  };
+}
+
 module.exports = {
   parseGPX,
   generateGPX,
   calculateCourse,
+  resampleGPXTrack,
 };

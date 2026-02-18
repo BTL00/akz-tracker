@@ -597,6 +597,34 @@ input[type="file"] {
     flex-shrink: 0;
 }
 
+/* ---------- Skip idle checkbox ---------- */
+.skip-idle-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 8px;
+    background: var(--button-bg);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.skip-idle-checkbox:hover {
+    background: var(--button-hover);
+}
+
+.skip-idle-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
 /* ---------- Time slider ---------- */
 #time-slider {
     flex: 1;

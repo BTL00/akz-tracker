@@ -2,7 +2,7 @@
 
 const express = require('express');
 const multer = require('multer');
-const { parseGPX, calculateCourse } = require('../utils/gpx');
+const { parseGPX, calculateCourse, resampleGPXTrack } = require('../utils/gpx');
 const Location = require('../models/Location');
 const Boat = require('../models/Boat');
 const config = require('../config');
@@ -97,7 +97,7 @@ router.post('/import/confirm', requireApiKey, async (req, res, next) => {
       return res.status(400).json({ error: 'Missing gpxData or mapping' });
     }
 
-    // Validate mapping structure: { trackIndex: { boatId, pin } }
+    // Validate mapping structure: { trackIndex: { pin, resamplingMode? } }
     if (typeof mapping !== 'object') {
       return res.status(400).json({ error: 'Invalid mapping format' });
     }
@@ -114,13 +114,18 @@ router.post('/import/confirm', requireApiKey, async (req, res, next) => {
         continue;
       }
 
-      const track = gpxData.tracks[trackIndex];
-      const { boatId, pin } = boatMapping;
+      let track = gpxData.tracks[trackIndex];
+      const { pin, resamplingMode } = boatMapping;
 
-      // Validate boat and PIN
-      const boat = await Boat.findOne({ boatId, pin });
+      // Apply resampling if specified
+      if (resamplingMode && resamplingMode !== 'none') {
+        track = resampleGPXTrack(track, resamplingMode);
+      }
+
+      // Validate boat exists by PIN
+      const boat = await Boat.findOne({ pin });
       if (!boat) {
-        errors.push(`Invalid boat ID or PIN for track "${track.name}"`);
+        errors.push(`Invalid boat PIN for track "${track.name}"`);
         continue;
       }
 
