@@ -775,6 +775,38 @@
 
   // ---------- Tracker functions ----------
 
+  /**
+   * Validate PIN with server before starting tracker
+   * @param {string} pin
+   * @returns {Promise<boolean>} true if valid, false if invalid
+   */
+  function validatePin(pin) {
+    return fetch(API_BASE + '/api/location', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey,
+      },
+      body: JSON.stringify({
+        lat: 0,
+        lon: 0,
+        course: 0,
+        speed: 0,
+        pin: pin,
+        source: 'validation',
+      }),
+    })
+      .then(function (response) {
+        if (response.status === 401) {
+          return false; // Invalid PIN
+        }
+        return true; // Valid (either 201 or other success)
+      })
+      .catch(function () {
+        return true; // Assume valid if network error
+      });
+  }
+
   function onTrackToggle() {
     if (Tracker.isTracking()) {
       Tracker.stop();
@@ -784,12 +816,8 @@
       showToast('Tracking stopped');
       setTimeout(hideToast, 2000);
     } else {
-      var savedPin = localStorage.getItem('tracker-pin');
-      if (savedPin) {
-        startTrackerWith(savedPin);
-      } else {
-        showTrackerModal();
-      }
+      // Always ask for PIN
+      showTrackerModal();
     }
   }
 
@@ -802,9 +830,18 @@
       return;
     }
     
-    localStorage.setItem('tracker-pin', pin);
-    hideTrackerModal();
-    startTrackerWith(pin);
+    // Validate PIN with server
+    validatePin(pin).then(function (isValid) {
+      if (isValid) {
+        hideTrackerModal();
+        startTrackerWith(pin);
+      } else {
+        showToast('Invalid PIN. Please try again.');
+        setTimeout(hideToast, 2000);
+        trackerPinInput.value = '';
+        trackerPinInput.focus();
+      }
+    });
   }
 
   function startTrackerWith(pin) {
@@ -832,15 +869,13 @@
   }
 
   function autoStartTracker() {
-    var pin = localStorage.getItem('tracker-pin');
-    if (pin) {
-      startTrackerWith(pin);
-    }
+    // Auto-start disabled - user must enter PIN each time
   }
 
   function showTrackerModal() {
-    var savedPin = localStorage.getItem('tracker-pin');
-    if (savedPin) trackerPinInput.value = savedPin;
+    // Always clear PIN input
+    trackerPinInput.value = '';
+    trackerPinInput.focus();
     trackerModal.classList.remove('hidden');
   }
 

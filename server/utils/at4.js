@@ -531,7 +531,7 @@ function parsePacket(buffer) {
           return null;
         }
       default:
-        console.log(`  -> Unknown protocol 0x${protocolNumber.toString(16).toUpperCase()}`);
+        console.log(`  -> Unknown protocol 0x${protocolNumber.toString(16).toUpperCase()} (expected: 0x01 login, 0x22 location, 0x23 heartbeat)`);
         return { type: 'unknown', protocolNumber };
     }
   } catch (err) {
