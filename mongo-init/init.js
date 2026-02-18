@@ -29,7 +29,7 @@ var boats = [
 
 // --------------- Expedition 1: Morning Regatta ---------------
 // 45 minutes, all 3 boats, 1-minute samples (extended for longer paths)
-var exp1Start = new Date(now.getTime() - 120 * 60 * 1000); // 2h ago
+var exp1Start = new Date(now.getTime() - 140 * 60 * 1000); // 2h20min ago
 var exp1End   = new Date(exp1Start.getTime() + 45 * 60 * 1000);
 var INTERVAL  = 60 * 1000; // 1 minute
 
@@ -72,7 +72,7 @@ for (var b = 0; b < boats.length; b++) {
 
 // --------------- Expedition 2: Afternoon Cruise ---------------
 // 30 minutes, Alfa + Charlie only, 1-minute samples (extended for longer paths)
-var exp2Start = new Date(now.getTime() - 50 * 60 * 1000); // 50 min ago
+var exp2Start = new Date(now.getTime() - 60 * 60 * 1000); // 1h ago
 var exp2End   = new Date(exp2Start.getTime() + 30 * 60 * 1000);
 var exp2Boats = [boats[0], boats[2]]; // Alfa + Charlie
 
@@ -111,7 +111,7 @@ for (var b2 = 0; b2 < exp2Boats.length; b2++) {
 
 // --------------- Expedition 3: Long Voyage ---------------
 // 90 minutes, Bravo + Charlie, 1-minute samples (new longer expedition)
-var exp3Start = new Date(now.getTime() - 180 * 60 * 1000); // 3h ago
+var exp3Start = new Date(now.getTime() - 240 * 60 * 1000); // 4h ago
 var exp3End   = new Date(exp3Start.getTime() + 90 * 60 * 1000);
 var exp3Boats = [boats[1], boats[2]]; // Bravo + Charlie
 
@@ -227,7 +227,7 @@ db.expeditions.insertMany([
     expeditionId: 'afternoon-cruise',
     name: 'Afternoon Cruise',
     boatIds: ['boat-alfa', 'boat-charlie'],
-    live: false,
+    live: true,
     startDate: exp2Start,
     endDate: exp2End,
     description: 'Demo cruise with 2 boats, 30 minutes.',
