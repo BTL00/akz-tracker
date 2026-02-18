@@ -138,23 +138,17 @@ class AT4Listener {
       const response = generateResponse(parsed);
       if (response) {
         socket.write(response);
-        console.log(`[${clientData.imei || 'unknown'}] Sent response for ${parsed.type} packet`);
+        console.log(`[${clientData.imei || 'unknown'}] ✓ Sent response for ${parsed.type} packet`);
       }
 
       // Store IMEI from login packet
       if (parsed.type === 'login' && parsed.imei) {
         clientData.imei = parsed.imei;
-        console.log(`[${clientData.imei}] AT4 login successful`);
-        
-        // Send location request to trigger device to send location updates
-        this.sendLocationRequest(socket, clientData);
+        console.log(`[${clientData.imei}] ✓ Login successful - waiting for location/heartbeat data...`);
       }
 
       // Handle different packet types
       switch (parsed.type) {
-        case 'login':
-          console.log(`[${clientData.imei}] AT4 login from IMEI: ${parsed.imei}`);
-          break;
         case 'location':
           await this.handleLocation(clientData, parsed);
           break;
@@ -162,10 +156,8 @@ class AT4Listener {
           await this.handleHeartbeat(clientData, parsed);
           break;
         case 'unknown':
-          console.log(`[${clientData.imei}] Received AT4 packet with unknown protocol: 0x${parsed.protocolNumber.toString(16).toUpperCase()}`);
+          console.log(`[${clientData.imei}] Unknown protocol: 0x${parsed.protocolNumber.toString(16).toUpperCase()}`);
           break;
-        default:
-          console.log(`[${clientData.imei}] Received AT4 packet type: ${parsed.type}, protocol: 0x${parsed.protocolNumber ? parsed.protocolNumber.toString(16).toUpperCase() : 'unknown'}`);
       }
     } catch (err) {
       console.error('Error processing AT4 packet:', err.message);
@@ -200,7 +192,7 @@ class AT4Listener {
       // Accept any location data that comes to the port, regardless of IMEI/MMSI matching
       const boatId = clientData.imei || 'unknown';
       
-      console.log(`[${clientData.imei}] Creating location record at (${parsed.lat}, ${parsed.lon})`);
+      console.log(`[${clientData.imei}] ✓ Got location: (${parsed.lat}, ${parsed.lon}) speed=${parsed.speed}kt course=${parsed.course}°`);
       
       // Create location document
       const location = await Location.create({
@@ -217,7 +209,7 @@ class AT4Listener {
         timestamp: parsed.timestamp || new Date(),
       });
 
-      console.log(`[${clientData.imei}] ✓ Saved AT4 position at (${parsed.lat}, ${parsed.lon})`);
+      console.log(`[${clientData.imei}] ✓ Saved AT4 position`);
 
       // Broadcast via WebSocket if available
       if (this.broadcastFunc) {
@@ -237,45 +229,6 @@ class AT4Listener {
       }
     } catch (err) {
       console.error(`[${clientData.imei}] Error saving AT4 position:`, err.message);
-    }
-  }
-
-  sendLocationRequest(socket, clientData) {
-    // Send command to request location data
-    // Format: 78 78 + length + 0x40 (command type) + content + serial + CRC + 0d 0a
-    // This is a location request/command packet
-    try {
-      const buffer = Buffer.alloc(13);
-      
-      // Start bits
-      buffer[0] = 0x78;
-      buffer[1] = 0x78;
-      
-      // Length (content after length byte until CRC)
-      buffer[2] = 0x08;  // 8 bytes: command(1) + reserved(2) + serial(2) + CRC(2)
-      
-      // Command type: 0x40 = location request
-      buffer[3] = 0x40;
-      
-      // Reserved/placeholder (2 bytes)
-      buffer[4] = 0x00;
-      buffer[5] = 0x00;
-      
-      // Serial number
-      buffer.writeUInt16BE(Math.floor(Math.random() * 65535), 6);
-      
-      // CRC
-      const crc = require('../utils/at4').calculateCRC16(buffer, 2, 8);
-      buffer.writeUInt16BE(crc, 8);
-      
-      // Stop bits
-      buffer[11] = 0x0D;
-      buffer[12] = 0x0A;
-      
-      socket.write(buffer);
-      console.log(`[${clientData.imei}] Sent location request command`);
-    } catch (err) {
-      console.error(`[${clientData.imei}] Error sending location request:`, err.message);
     }
   }
 }

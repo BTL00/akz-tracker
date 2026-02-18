@@ -73,12 +73,12 @@ function verifyCRC(buffer) {
 
 /**
  * Parse login packet (0x01)
- * Format: Start(2) + Length(1) + Protocol(1) + IMEI(8) + Serial(2) + CRC(2) + Stop(2)
+ * Format: Start(2) + Length(1) + Protocol(1) + IMEI(8) + TypeID(2) + TimeZoneLang(2) + Serial(2) + CRC(2) + Stop(2)
  * @param {Buffer} buffer - Login packet buffer
  * @returns {Object|null} - { type: 'login', imei: string, serial: number } or null
  */
 function parseLoginPacket(buffer) {
-  if (buffer.length < 18) return null;
+  if (buffer.length < 22) return null;  // Minimum: 2+1+1+8+2+2+2+2+2 = 22 bytes
   
   // Verify start bits
   if (buffer[0] !== 0x78 || buffer[1] !== 0x78) return null;
@@ -90,7 +90,7 @@ function parseLoginPacket(buffer) {
   // Verify CRC
   if (!verifyCRC(buffer)) return null;
   
-  // Extract IMEI (8 bytes BCD)
+  // Extract IMEI (8 bytes BCD) at offset 4
   const imeiBytes = buffer.slice(4, 12);
   let imei = '';
   for (let i = 0; i < imeiBytes.length; i++) {
@@ -98,12 +98,22 @@ function parseLoginPacket(buffer) {
     imei += (byte >> 4).toString() + (byte & 0x0F).toString();
   }
   
-  // Extract serial number
-  const serial = buffer.readUInt16BE(12);
+  // Extract type identification code (2 bytes) at offset 12
+  const typeId = buffer.readUInt16BE(12);
+  
+  // Extract timezone/language (2 bytes) at offset 14
+  const tzLang = buffer.readUInt16BE(14);
+  
+  // Extract serial number (2 bytes) at offset 16
+  const serial = buffer.readUInt16BE(16);
+  
+  console.log(`  -> Login parsed: IMEI=${imei}, TypeID=0x${typeId.toString(16)}, Serial=0x${serial.toString(16).padStart(4, '0')}`);
   
   return {
     type: 'login',
     imei: imei,
+    typeId: typeId,
+    tzLang: tzLang,
     serial: serial,
   };
 }
