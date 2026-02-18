@@ -131,6 +131,90 @@ function generateLoginResponse(serial) {
 }
 
 /**
+ * Parse heartbeat packet (0x23)
+ * Format: Start(2) + Length(1) + Protocol(1) + TerminalInfo(1) + Voltage(2) + GSM(1) + Language(2) + Serial(2) + CRC(2) + Stop(2)
+ * @param {Buffer} buffer - Heartbeat packet buffer
+ * @returns {Object|null} - { type: 'heartbeat', voltage: number, signalStrength: number, serial: number } or null
+ */
+function parseHeartbeatPacket(buffer) {
+  if (buffer.length < 18) return null;
+  
+  // Verify start bits
+  if (buffer[0] !== 0x78 || buffer[1] !== 0x78) return null;
+  
+  // Verify protocol number
+  const protocolNumber = buffer[3];
+  if (protocolNumber !== AT4_PROTOCOL.HEARTBEAT) return null;
+  
+  // Verify CRC
+  if (!verifyCRC(buffer)) return null;
+  
+  let offset = 4;
+  
+  // Terminal information (1 byte) - contains various status bits
+  const terminalInfo = buffer[offset++];
+  
+  // Voltage level (2 bytes) - divide by 100 after converting to decimal
+  const voltageRaw = buffer.readUInt16BE(offset);
+  const voltage = voltageRaw / 100;
+  offset += 2;
+  
+  // GSM signal strength (1 byte)
+  // 0x00: no signal, 0x01: extremely weak, 0x02: very weak, 0x03: good, 0x04: strong
+  const signalStrength = buffer[offset++];
+  
+  // Language/Extended port status (2 bytes)
+  const languageStatus = buffer.readUInt16BE(offset);
+  offset += 2;
+  
+  // Serial number (2 bytes)
+  const serial = buffer.readUInt16BE(offset);
+  
+  return {
+    type: 'heartbeat',
+    protocolNumber: AT4_PROTOCOL.HEARTBEAT,
+    terminalInfo: terminalInfo,
+    voltage: voltage,
+    signalStrength: signalStrength,
+    languageStatus: languageStatus,
+    serial: serial,
+  };
+}
+
+/**
+ * Generate heartbeat response packet
+ * Format: Start(2) + Length(1) + Protocol(1) + Serial(2) + CRC(2) + Stop(2)
+ * @param {number} serial - Serial number from heartbeat packet
+ * @returns {Buffer} - Response buffer
+ */
+function generateHeartbeatResponse(serial) {
+  const buffer = Buffer.alloc(10);
+  
+  // Start bits
+  buffer[0] = 0x78;
+  buffer[1] = 0x78;
+  
+  // Length (5 bytes: protocol + serial + CRC)
+  buffer[2] = 0x05;
+  
+  // Protocol (0x23 for heartbeat response)
+  buffer[3] = 0x23;
+  
+  // Serial number
+  buffer.writeUInt16BE(serial, 4);
+  
+  // Calculate and write CRC
+  const crc = calculateCRC16(buffer, 2, 6);
+  buffer.writeUInt16BE(crc, 6);
+  
+  // Stop bits
+  buffer[8] = 0x0D;
+  buffer[9] = 0x0A;
+  
+  return buffer;
+}
+
+/**
  * Parse GPS location packet (0x22)
  * Format includes date/time, GPS satellites, lat/lon, speed, course, etc.
  * @param {Buffer} buffer - Location packet buffer
@@ -283,7 +367,10 @@ function parsePacket(buffer) {
       return parseLoginPacket(buffer);
     case AT4_PROTOCOL.LOCATION:
       return parseLocationPacket(buffer);
+    case AT4_PROTOCOL.HEARTBEAT:
+      return parseHeartbeatPacket(buffer);
     default:
+      console.log(`AT4 unknown protocol number: 0x${protocolNumber.toString(16).toUpperCase()}`);
       return { type: 'unknown', protocolNumber };
   }
 }
@@ -301,6 +388,8 @@ function generateResponse(parsedData) {
       return generateLoginResponse(parsedData.serial);
     case 'location':
       return generateLocationResponse(parsedData.serial);
+    case 'heartbeat':
+      return generateHeartbeatResponse(parsedData.serial);
     default:
       return null;
   }
@@ -311,9 +400,11 @@ module.exports = {
   parsePacket,
   parseLoginPacket,
   parseLocationPacket,
+  parseHeartbeatPacket,
   generateResponse,
   generateLoginResponse,
   generateLocationResponse,
+  generateHeartbeatResponse,
   calculateCRC16,
   verifyCRC,
 };

@@ -142,11 +142,21 @@ class AT4Listener {
         case 'location':
           await this.handleLocation(clientData, parsed);
           break;
+        case 'heartbeat':
+          await this.handleHeartbeat(clientData, parsed);
+          break;
         default:
-          console.log(`Received AT4 packet type: ${parsed.type}`);
+          console.log(`Received AT4 packet type: ${parsed.type}, protocol: 0x${parsed.protocolNumber ? parsed.protocolNumber.toString(16).toUpperCase() : 'unknown'}`);
       }
     } catch (err) {
       console.error('Error processing AT4 packet:', err.message);
+      console.error('Error stack:', err.stack);
+      if (packet) {
+        console.error('Packet hex:', packet.toString('hex'));
+      }
+      if (clientData.imei) {
+        console.error('Client IMEI:', clientData.imei);
+      }
     }
   }
 
@@ -161,6 +171,18 @@ class AT4Listener {
     // Try to find boat with matching IMEI or apiKey
     // Note: In a real setup, you'd configure the device to send a specific identifier
     // For now, we'll authenticate based on the first location packet
+  }
+
+  async handleHeartbeat(clientData, parsed) {
+    if (!clientData.imei) {
+      console.warn('Received heartbeat before login');
+      return;
+    }
+
+    const signalLabels = ['no signal', 'extremely weak', 'very weak', 'good', 'strong'];
+    const signalLabel = signalLabels[parsed.signalStrength] || 'unknown';
+    
+    console.log(`AT4 heartbeat from IMEI ${clientData.imei}: voltage=${parsed.voltage}V, signal=${signalLabel}`);
   }
 
   async handleLocation(clientData, parsed) {

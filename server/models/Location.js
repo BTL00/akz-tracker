@@ -48,7 +48,7 @@ const locationSchema = new mongoose.Schema(
     },
     source: {
       type: String,
-      enum: ['phone', 'tracker', 'gpx', 'nmea', 'nmea-client', 'signalk', 'ais'],
+      enum: ['phone', 'tracker', 'gpx', 'nmea', 'nmea-client', 'signalk', 'ais', 'at4'],
       default: 'tracker',
     },
     timestamp: {
