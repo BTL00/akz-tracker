@@ -108,7 +108,17 @@ async function start() {
 
   // Initialize SignalK service manager if enabled or if any boats have SignalK config
   // The manager can work with either global config or per-boat configs
-  if (config.signalkEnabled || (await mongoose.connection.db.collection('boats').countDocuments({ signalkUrl: { $ne: null, $exists: true } }) > 0)) {
+  let signalkManagerNeeded = config.signalkEnabled;
+  
+  // Check if any boats have per-boat SignalK config (only if not already enabled globally)
+  if (!signalkManagerNeeded) {
+    const boatsWithSignalK = await mongoose.connection.db.collection('boats').countDocuments({ 
+      signalkUrl: { $ne: null, $exists: true } 
+    });
+    signalkManagerNeeded = boatsWithSignalK > 0;
+  }
+  
+  if (signalkManagerNeeded) {
     const signalkManager = new SignalKServiceManager(
       config.signalkUrl || null, 
       config.signalkToken || null, 

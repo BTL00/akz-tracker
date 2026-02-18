@@ -88,7 +88,8 @@ class SignalKServiceManager {
       this.services.set(boat.boatId, service);
       console.log(`SignalK service started for boat ${boat.boatId} on ${url} (MMSI: ${boat.mmsi || 'none'})`);
     } catch (err) {
-      console.error(`Error starting SignalK service for boat ${boatOrId}:`, err.message);
+      const boatId = typeof boatOrId === 'string' ? boatOrId : boatOrId.boatId;
+      console.error(`Error starting SignalK service for boat ${boatId}:`, err.message);
     }
   }
 
