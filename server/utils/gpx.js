@@ -170,6 +170,40 @@ function calculateCourse(lat1, lon1, lat2, lon2) {
 }
 
 /**
+ * Calculate speed in knots between two GPS points using Haversine formula.
+ * @param {Number} lat1 - Start latitude
+ * @param {Number} lon1 - Start longitude
+ * @param {Number} time1 - Start time (ms timestamp)
+ * @param {Number} lat2 - End latitude
+ * @param {Number} lon2 - End longitude
+ * @param {Number} time2 - End time (ms timestamp)
+ * @returns {Number} - Speed in knots (0 if invalid)
+ */
+function calculateSpeedKnots(lat1, lon1, time1, lat2, lon2, time2) {
+  const toRad = Math.PI / 180;
+  const R = 3440.065; // Earth radius in nautical miles
+  
+  const dLat = (lat2 - lat1) * toRad;
+  const dLon = (lon2 - lon1) * toRad;
+  
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distanceNm = R * c; // distance in nautical miles
+  
+  const timeHours = (time2 - time1) / (1000 * 3600); // convert ms to hours
+  
+  if (timeHours <= 0) {
+    return 0;
+  }
+  
+  const speed = distanceNm / timeHours;
+  return Math.round(speed * 10) / 10; // round to 1 decimal place
+}
+
+/**
  * Resample GPX track using time-bucket decimation.
  * Keeps only the point closest to each interval boundary.
  * @param {Object} track - Track object with segments and points
@@ -255,5 +289,6 @@ module.exports = {
   parseGPX,
   generateGPX,
   calculateCourse,
+  calculateSpeedKnots,
   resampleGPXTrack,
 };

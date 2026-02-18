@@ -2,7 +2,7 @@
 
 const express = require('express');
 const multer = require('multer');
-const { parseGPX, calculateCourse, resampleGPXTrack } = require('../utils/gpx');
+const { parseGPX, calculateCourse, calculateSpeedKnots, resampleGPXTrack } = require('../utils/gpx');
 const Location = require('../models/Location');
 const Boat = require('../models/Boat');
 const config = require('../config');
@@ -132,9 +132,10 @@ router.post('/import/confirm', requireApiKey, async (req, res, next) => {
       // Process all segments and points in this track
       for (const segment of track.segments) {
         const locationDocs = [];
+        const segmentPoints = segment.points; // reference for calculating speeds
         
-        for (let i = 0; i < segment.points.length; i++) {
-          const point = segment.points[i];
+        for (let i = 0; i < segmentPoints.length; i++) {
+          const point = segmentPoints[i];
           
           // Skip points without timestamp
           if (!point.time) {
@@ -145,15 +146,21 @@ router.post('/import/confirm', requireApiKey, async (req, res, next) => {
           // Calculate course from consecutive points if not provided
           let course = point.course;
           if (course == null && i > 0) {
-            const prevPoint = segment.points[i - 1];
+            const prevPoint = segmentPoints[i - 1];
             course = calculateCourse(prevPoint.lat, prevPoint.lon, point.lat, point.lon);
           }
           if (course == null) course = 0;
 
-          // Convert speed from m/s to knots (if present)
+          // Convert speed from m/s to knots (if present) or calculate from position delta
           let speed = 0;
           if (point.speed != null && point.speed >= 0) {
             speed = point.speed / 0.514444; // m/s to knots
+          } else if (i > 0 && segmentPoints[i - 1].time) {
+            // Calculate speed from previous point using Haversine formula
+            const prevPoint = segmentPoints[i - 1];
+            const prevTime = new Date(prevPoint.time).getTime();
+            const currTime = new Date(point.time).getTime();
+            speed = calculateSpeedKnots(prevPoint.lat, prevPoint.lon, prevTime, point.lat, point.lon, currTime);
           }
 
           locationDocs.push({
