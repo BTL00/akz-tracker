@@ -64,6 +64,8 @@ class AT4Listener {
     const clientData = this.clients.get(socket);
     if (!clientData) return;
 
+    console.log(`[${clientData.imei || 'unknown'}] Raw data received (${data.length} bytes): ${data.toString('hex')}`);
+    
     // Append data to buffer
     clientData.buffer = Buffer.concat([clientData.buffer, data]);
 
@@ -121,18 +123,22 @@ class AT4Listener {
 
   async processPacket(socket, clientData, packet) {
     try {
+      console.log(`[${clientData.imei || 'unknown'}] Processing packet (${packet.length} bytes): ${packet.toString('hex')}`);
+      
       const parsed = parsePacket(packet);
       
       if (!parsed) {
-        console.warn('Raw packet:', packet.toString('hex'));
-        console.warn('Failed to parse AT4 packet');
+        console.warn(`[${clientData.imei || 'unknown'}] Failed to parse AT4 packet: ${packet.toString('hex')}`);
         return;
       }
+
+      console.log(`[${clientData.imei || 'unknown'}] Parsed packet type: ${parsed.type}, protocol: 0x${parsed.protocolNumber ? parsed.protocolNumber.toString(16).toUpperCase() : 'unknown'}`);
 
       // Generate and send response
       const response = generateResponse(parsed);
       if (response) {
         socket.write(response);
+        console.log(`[${clientData.imei || 'unknown'}] Sent response for ${parsed.type} packet`);
       }
 
       // Store IMEI from login packet
@@ -143,7 +149,7 @@ class AT4Listener {
       // Handle different packet types
       switch (parsed.type) {
         case 'login':
-          console.log(`AT4 login from IMEI: ${parsed.imei}`);;
+          console.log(`AT4 login from IMEI: ${parsed.imei}`);
           break;
         case 'location':
           await this.handleLocation(clientData, parsed);
@@ -159,12 +165,8 @@ class AT4Listener {
       }
     } catch (err) {
       console.error('Error processing AT4 packet:', err.message);
-      console.error('Error stack:', err.stack);
       if (packet) {
         console.error('Packet hex:', packet.toString('hex'));
-      }
-      if (clientData.imei) {
-        console.error('Client IMEI:', clientData.imei);
       }
     }
   }

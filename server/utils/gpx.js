@@ -217,6 +217,7 @@ function resampleGPXTrack(track, samplingMode) {
 
   // Map sampling mode to interval in milliseconds
   const intervals = {
+    '10sec': 10 * 1000,
     '1min': 60 * 1000,
     '10min': 10 * 60 * 1000,
     '1hour': 60 * 60 * 1000,

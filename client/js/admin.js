@@ -634,6 +634,7 @@ function renderGPXMapping(gpxData) {
     // Calculate estimated point reductions for each sampling mode
     const reductions = {
       'none': totalPoints,
+      '10sec': Math.max(1, Math.ceil(totalPoints / 10)),
       '1min': Math.max(1, Math.ceil(totalPoints / 60)),
       '10min': Math.max(1, Math.ceil(totalPoints / 600)),
       '1hour': Math.max(1, Math.ceil(totalPoints / 3600))
@@ -655,6 +656,7 @@ function renderGPXMapping(gpxData) {
           <label>Re-sampling:</label>
           <select id="track-${idx}-resample" class="track-resample-select" data-track-idx="${idx}">
             <option value="none">No re-sampling (${reductions['none']} points)</option>
+            <option value="10sec">10 seconds (≈${reductions['10sec']} points)</option>
             <option value="1min">1 minute (≈${reductions['1min']} points)</option>
             <option value="10min">10 minutes (≈${reductions['10min']} points)</option>
             <option value="1hour">1 hour (≈${reductions['1hour']} points)</option>

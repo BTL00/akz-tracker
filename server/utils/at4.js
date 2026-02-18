@@ -365,39 +365,49 @@ function generateLocationResponse(serial) {
  * @returns {Object|null} - Parsed data or null
  */
 function parsePacket(buffer) {
-  if (!buffer || buffer.length < 10) return null;
+  if (!buffer || buffer.length < 10) {
+    console.warn('Packet too short:', buffer ? buffer.length : 0, 'bytes');
+    return null;
+  }
   
   try {
     // Check start bits
-    if (buffer[0] !== 0x78 || buffer[1] !== 0x78) return null;
+    if (buffer[0] !== 0x78 || buffer[1] !== 0x78) {
+      console.warn('Invalid start bits:', buffer[0].toString(16), buffer[1].toString(16));
+      return null;
+    }
     
-    // Get protocol number
+    // Get protocol number (at index 3)
     const protocolNumber = buffer[3];
+    console.log(`Attempting to parse protocol 0x${protocolNumber.toString(16).toUpperCase()} from packet: ${buffer.toString('hex')}`);
     
     switch (protocolNumber) {
       case AT4_PROTOCOL.LOGIN:
+        console.log('  -> Parsing as LOGIN packet (0x01)');
         try {
           return parseLoginPacket(buffer);
         } catch (err) {
-          console.warn('Login packet parse error:', err.message, 'Packet:', buffer.toString('hex'));
+          console.warn('  -> LOGIN parse error:', err.message);
           return null;
         }
       case AT4_PROTOCOL.LOCATION:
+        console.log('  -> Parsing as LOCATION packet (0x22)');
         try {
           return parseLocationPacket(buffer);
         } catch (err) {
-          console.warn('Location packet parse error:', err.message, 'Packet:', buffer.toString('hex'));
+          console.warn('  -> LOCATION parse error:', err.message);
           return null;
         }
       case AT4_PROTOCOL.HEARTBEAT:
+        console.log('  -> Parsing as HEARTBEAT packet (0x23)');
         try {
           return parseHeartbeatPacket(buffer);
         } catch (err) {
-          console.warn('Heartbeat packet parse error:', err.message, 'Packet:', buffer.toString('hex'));
+          console.warn('  -> HEARTBEAT parse error:', err.message);
           return null;
         }
       default:
-        console.log(`AT4 unknown protocol number: 0x${protocolNumber.toString(16).toUpperCase()}, packet: ${buffer.toString('hex')}`);
+        console.log(`  -> Unknown protocol 0x${protocolNumber.toString(16).toUpperCase()}`);
         return { type: 'unknown', protocolNumber };
     }
   } catch (err) {
