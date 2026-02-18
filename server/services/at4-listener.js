@@ -135,16 +135,24 @@ class AT4Listener {
         socket.write(response);
       }
 
+      // Store IMEI from login packet
+      if (parsed.type === 'login' && parsed.imei) {
+        clientData.imei = parsed.imei;
+      }
+
       // Handle different packet types
       switch (parsed.type) {
         case 'login':
-          await this.handleLogin(socket, clientData, parsed);
+          console.log(`AT4 login from IMEI: ${parsed.imei}`);;
           break;
         case 'location':
           await this.handleLocation(clientData, parsed);
           break;
         case 'heartbeat':
           await this.handleHeartbeat(clientData, parsed);
+          break;
+        case 'unknown':
+          console.log(`Received AT4 packet with unknown protocol: 0x${parsed.protocolNumber.toString(16).toUpperCase()}`);
           break;
         default:
           console.log(`Received AT4 packet type: ${parsed.type}, protocol: 0x${parsed.protocolNumber ? parsed.protocolNumber.toString(16).toUpperCase() : 'unknown'}`);

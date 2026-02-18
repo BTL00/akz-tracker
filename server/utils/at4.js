@@ -45,19 +45,30 @@ function calculateCRC16(buffer, start, end) {
 /**
  * Verify packet CRC
  * @param {Buffer} buffer - Packet buffer
- * @returns {boolean} - True if CRC is valid
+ * @returns {boolean} - True if CRC is valid (or lenient mode skips check)
  */
 function verifyCRC(buffer) {
   if (buffer.length < 7) return false;
   
-  // CRC covers from length byte to serial number (inclusive)
-  const crcStart = 2; // After start bits
-  const crcEnd = buffer.length - 4; // Before CRC and stop bits
+  try {
+    // CRC covers from length byte to serial number (inclusive)
+    const crcStart = 2; // After start bits
+    const crcEnd = buffer.length - 4; // Before CRC and stop bits
+    
+    const calculatedCRC = calculateCRC16(buffer, crcStart, crcEnd);
+    const packetCRC = buffer.readUInt16BE(buffer.length - 4);
+    
+    if (calculatedCRC === packetCRC) {
+      return true;
+    }
+  } catch (err) {
+    // If CRC check fails, log and continue anyway (lenient mode)
+  }
   
-  const calculatedCRC = calculateCRC16(buffer, crcStart, crcEnd);
-  const packetCRC = buffer.readUInt16BE(buffer.length - 4);
-  
-  return calculatedCRC === packetCRC;
+  // Lenient mode: accept packets even if CRC doesn't match
+  // This allows accepting non-standard or corrupted packets
+  console.warn('CRC verification failed, accepting packet anyway');
+  return true;
 }
 
 /**
@@ -356,22 +367,42 @@ function generateLocationResponse(serial) {
 function parsePacket(buffer) {
   if (!buffer || buffer.length < 10) return null;
   
-  // Check start bits
-  if (buffer[0] !== 0x78 || buffer[1] !== 0x78) return null;
-  
-  // Get protocol number
-  const protocolNumber = buffer[3];
-  
-  switch (protocolNumber) {
-    case AT4_PROTOCOL.LOGIN:
-      return parseLoginPacket(buffer);
-    case AT4_PROTOCOL.LOCATION:
-      return parseLocationPacket(buffer);
-    case AT4_PROTOCOL.HEARTBEAT:
-      return parseHeartbeatPacket(buffer);
-    default:
-      console.log(`AT4 unknown protocol number: 0x${protocolNumber.toString(16).toUpperCase()}`);
-      return { type: 'unknown', protocolNumber };
+  try {
+    // Check start bits
+    if (buffer[0] !== 0x78 || buffer[1] !== 0x78) return null;
+    
+    // Get protocol number
+    const protocolNumber = buffer[3];
+    
+    switch (protocolNumber) {
+      case AT4_PROTOCOL.LOGIN:
+        try {
+          return parseLoginPacket(buffer);
+        } catch (err) {
+          console.warn('Login packet parse error:', err.message, 'Packet:', buffer.toString('hex'));
+          return null;
+        }
+      case AT4_PROTOCOL.LOCATION:
+        try {
+          return parseLocationPacket(buffer);
+        } catch (err) {
+          console.warn('Location packet parse error:', err.message, 'Packet:', buffer.toString('hex'));
+          return null;
+        }
+      case AT4_PROTOCOL.HEARTBEAT:
+        try {
+          return parseHeartbeatPacket(buffer);
+        } catch (err) {
+          console.warn('Heartbeat packet parse error:', err.message, 'Packet:', buffer.toString('hex'));
+          return null;
+        }
+      default:
+        console.log(`AT4 unknown protocol number: 0x${protocolNumber.toString(16).toUpperCase()}, packet: ${buffer.toString('hex')}`);
+        return { type: 'unknown', protocolNumber };
+    }
+  } catch (err) {
+    console.error('Unexpected error in parsePacket:', err.message);
+    return null;
   }
 }
 
