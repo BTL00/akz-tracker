@@ -167,9 +167,33 @@ var Tracker = (function () {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(body),
+    }).then(function (response) {
+      if (!response.ok) {
+        console.warn('Tracker POST returned:', response.status);
+        // If server returned 5xx error or we're offline, queue it
+        if (response.status >= 500 || !navigator.onLine) {
+          if (typeof LocationQueue !== 'undefined') {
+            LocationQueue.queueLocation(_pin, body);
+          }
+        }
+      }
     }).catch(function (err) {
-      console.warn('Tracker POST failed:', err);
+      console.warn('Tracker POST failed:', err.message);
+      // On network error, if offline, queue the location
+      if (!navigator.onLine && typeof LocationQueue !== 'undefined') {
+        LocationQueue.queueLocation(_pin, body);
+      }
     });
+  }
+
+  /**
+   * Manually trigger a retry of queued locations.
+   * Called when connection is restored.
+   */
+  function retryQueuedLocations() {
+    if (typeof LocationQueue !== 'undefined') {
+      LocationQueue.retryQueue();
+    }
   }
 
   /**
@@ -219,5 +243,6 @@ var Tracker = (function () {
     stop:        stop,
     isTracking:  isTracking,
     hasWakeLock: hasWakeLock,
+    retryQueuedLocations: retryQueuedLocations,
   };
 })();

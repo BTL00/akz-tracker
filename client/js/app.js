@@ -282,6 +282,42 @@
     if (window.wsClient) {
       window.wsClient.setLocationUpdateCallback(handleWebSocketLocationUpdate);
     }
+
+    // ---------- Offline queue monitoring ----------
+    if (typeof LocationQueue !== 'undefined') {
+      // Set up queue status change listener
+      LocationQueue.onQueueChange(function (queueCount, isOnline) {
+        updateOfflineBadge(queueCount, isOnline);
+      });
+
+      // Initial queue status update
+      LocationQueue.getQueueCount().then(function (count) {
+        updateOfflineBadge(count, navigator.onLine);
+      });
+
+      // Listen for online/offline events
+      window.addEventListener('online', function () {
+        console.log('[App] Device came online');
+        showToast('Connection restored - sending queued locations...');
+        updateOfflineBadge(0, true);
+        // Trigger retry of queued locations
+        Tracker.retryQueuedLocations();
+        LocationQueue.retryQueue();
+        setTimeout(hideToast, 3000);
+      });
+
+      window.addEventListener('offline', function () {
+        console.log('[App] Device went offline');
+        showToast('Offline mode - locations will be queued');
+        setTimeout(hideToast, 4000);
+      });
+
+      // Initial check
+      if (!navigator.onLine) {
+        showToast('Currently offline - locations will be queued');
+        setTimeout(hideToast, 4000);
+      }
+    }
   });
 
   // ---------- Playback bar show / hide ----------
@@ -996,6 +1032,29 @@
         trackBtn.classList.add('active');
         trackBtn.querySelector('span').textContent = 'NMEA Active';
       }
+    }
+  }
+
+  /**
+   * Update the offline badge visibility and queue count display
+   */
+  function updateOfflineBadge(queueCount, isOnline) {
+    var badge = document.getElementById('offline-badge');
+    var countBadge = document.getElementById('queue-count-badge');
+    
+    if (!badge) return;
+
+    if (!isOnline || queueCount > 0) {
+      // Show offline badge when offline or when queue has items
+      badge.classList.remove('hidden');
+      if (queueCount > 0) {
+        countBadge.textContent = queueCount > 99 ? '99+' : queueCount;
+      } else {
+        countBadge.textContent = '';
+      }
+    } else {
+      // Hide when online and queue is empty
+      badge.classList.add('hidden');
     }
   }
 })();
