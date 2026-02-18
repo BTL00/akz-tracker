@@ -106,11 +106,12 @@ async function start() {
     console.log('NMEA TCP listener disabled');
   }
 
-  // Initialize SignalK service manager if enabled
-  if (config.signalkEnabled && config.signalkUrl) {
+  // Initialize SignalK service manager if enabled or if any boats have SignalK config
+  // The manager can work with either global config or per-boat configs
+  if (config.signalkEnabled || (await mongoose.connection.db.collection('boats').countDocuments({ signalkUrl: { $ne: null, $exists: true } }) > 0)) {
     const signalkManager = new SignalKServiceManager(
-      config.signalkUrl, 
-      config.signalkToken, 
+      config.signalkUrl || null, 
+      config.signalkToken || null, 
       broadcastLocationUpdate
     );
     await signalkManager.startAll();
