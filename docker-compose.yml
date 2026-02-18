@@ -28,11 +28,14 @@ services:
     environment:
       MONGO_URI: mongodb://mongo:27017/akz-tracker
       PORT: "3001"
+      AT4_TCP_ENABLED: "true"
+      AT4_TCP_PORT: "21102"
       API_KEY: ${API_KEY:-change-me-to-a-real-secret}
     networks:
       - backend
     ports:
       - "127.0.0.1:3001:3001"
+      - "21102:21102"
     # Apache TLS proxy is the public entry point
 
   # ---------- MongoDB backup (disabled for now) ----------
