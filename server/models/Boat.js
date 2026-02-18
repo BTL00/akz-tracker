@@ -44,6 +44,12 @@ const boatSchema = new mongoose.Schema(
       min: 13110,
       max: 13129,
     },
+    at4TcpPort: {
+      type: Number,
+      default: null,
+      min: 15110,
+      max: 15129,
+    },
     enabledSources: {
       type: [String],
       enum: ['phone', 'tracker', 'gpx', 'nmea', 'signalk', 'ais'],

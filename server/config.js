@@ -13,4 +13,8 @@ module.exports = {
   signalkEnabled: process.env.SIGNALK_ENABLED === 'true',
   signalkUrl: process.env.SIGNALK_URL || '',
   signalkToken: process.env.SIGNALK_TOKEN || '',
+  
+  // AT4 GPS Tracker TCP Listener
+  at4TcpEnabled: process.env.AT4_TCP_ENABLED === 'true',
+  at4TcpPort: parseInt(process.env.AT4_TCP_PORT, 10) || 15110,
 };

@@ -8,6 +8,7 @@ Live boat position tracker built on OpenSeaMap. Supports real-time positions via
 - Expedition recording and playback with speed control
 - GPX import and export
 - NMEA 0183 TCP listener and SignalK client (optional)
+- AT4 GPS Tracker support with binary GPRS protocol (optional)
 - PWA — installable on mobile
 - Dark / light theme
 
@@ -47,6 +48,8 @@ All variables are set in your `.env` file (copied from `.env.example`).
 | `SIGNALK_ENABLED` | — | `false` | Enable SignalK client |
 | `SIGNALK_URL` | — | — | SignalK server WebSocket URL |
 | `SIGNALK_TOKEN` | — | — | SignalK authentication token |
+| `AT4_TCP_ENABLED` | — | `false` | Enable AT4 GPS tracker TCP listener |
+| `AT4_TCP_PORT` | — | `15110` | Port for AT4 TCP listener |
 
 ## Deployment
 

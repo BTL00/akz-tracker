@@ -145,7 +145,7 @@ router.post('/location', async (req, res, next) => {
 // ---------- POST /api/boats – create a new boat ----------
 router.post('/boats', requireApiKey, async (req, res, next) => {
   try {
-    const { boatId, name, color, mmsi, nmeaTcpPort, signalkPort } = req.body;
+    const { boatId, name, color, mmsi, nmeaTcpPort, signalkPort, at4TcpPort } = req.body;
 
     // Validate required fields
     const errors = [];
@@ -158,6 +158,9 @@ router.post('/boats', requireApiKey, async (req, res, next) => {
     }
     if (signalkPort && (signalkPort < 13110 || signalkPort > 13129)) {
       errors.push('SignalK Port must be between 13110 and 13129');
+    }
+    if (at4TcpPort && (at4TcpPort < 15110 || at4TcpPort > 15129)) {
+      errors.push('AT4 TCP Port must be between 15110 and 15129');
     }
 
     if (errors.length) {
@@ -179,6 +182,7 @@ router.post('/boats', requireApiKey, async (req, res, next) => {
       apiKey,
       nmeaTcpPort: nmeaTcpPort || null,
       signalkPort: signalkPort || null,
+      at4TcpPort: at4TcpPort || null,
     });
 
     // Start services for this boat if managers are available and ports are configured
@@ -187,6 +191,9 @@ router.post('/boats', requireApiKey, async (req, res, next) => {
     }
     if (signalkPort && req.app.locals.signalkManager) {
       await req.app.locals.signalkManager.startForBoat(boatId, signalkPort, mmsi);
+    }
+    if (at4TcpPort && req.app.locals.at4Manager) {
+      await req.app.locals.at4Manager.startForBoat(boatId, at4TcpPort, mmsi);
     }
 
     res.status(201).json({
@@ -210,7 +217,7 @@ router.post('/boats', requireApiKey, async (req, res, next) => {
 router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
   try {
     const { boatId } = req.params;
-    const { name, color, mmsi, nmeaTcpPort, signalkPort } = req.body;
+    const { name, color, mmsi, nmeaTcpPort, signalkPort, at4TcpPort } = req.body;
 
     // Validate port ranges if provided
     if (nmeaTcpPort !== undefined && nmeaTcpPort !== null) {
@@ -223,6 +230,11 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
         return res.status(400).json({ error: 'SignalK Port must be between 13110 and 13129' });
       }
     }
+    if (at4TcpPort !== undefined && at4TcpPort !== null) {
+      if (at4TcpPort < 15110 || at4TcpPort > 15129) {
+        return res.status(400).json({ error: 'AT4 TCP Port must be between 15110 and 15129' });
+      }
+    }
 
     const updates = {};
     if (name !== undefined) updates.name = name;
@@ -230,6 +242,7 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
     if (mmsi !== undefined) updates.mmsi = mmsi;
     if (nmeaTcpPort !== undefined) updates.nmeaTcpPort = nmeaTcpPort;
     if (signalkPort !== undefined) updates.signalkPort = signalkPort;
+    if (at4TcpPort !== undefined) updates.at4TcpPort = at4TcpPort;
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'No valid fields to update' });
@@ -266,6 +279,9 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
     if (signalkPort !== undefined && req.app.locals.signalkManager) {
       await req.app.locals.signalkManager.restartForBoat(boatId);
     }
+    if (at4TcpPort !== undefined && req.app.locals.at4Manager) {
+      await req.app.locals.at4Manager.restartForBoat(boatId);
+    }
 
     res.json({
       boatId: boat.boatId,
@@ -274,6 +290,7 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
       mmsi: boat.mmsi,
       nmeaTcpPort: boat.nmeaTcpPort,
       signalkPort: boat.signalkPort,
+      at4TcpPort: boat.at4TcpPort,
       message: 'Boat updated successfully'
     });
   } catch (err) {
