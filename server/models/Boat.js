@@ -46,6 +46,12 @@ const boatSchema = new mongoose.Schema(
       min: NMEA_PORT_MIN,
       max: NMEA_PORT_MAX,
     },
+    at4TcpPort: {
+      type: Number,
+      default: null,
+      min: 15110,
+      max: 15129,
+    },
     signalkPort: {
       type: Number,
       default: null,

@@ -153,7 +153,7 @@ router.post('/location', async (req, res, next) => {
 // ---------- POST /api/boats – create a new boat ----------
 router.post('/boats', requireApiKey, async (req, res, next) => {
   try {
-    const { boatId, name, color, mmsi, nmeaTcpPort, signalkPort, signalkUrl, signalkToken, at4TcpPort } = req.body;
+    const { boatId, name, color, mmsi, nmeaTcpPort, signalkPort, signalkUrl, signalkToken, at4TcpPort, enabledSources } = req.body;
 
     // Validate required fields
     const errors = [];
@@ -193,6 +193,7 @@ router.post('/boats', requireApiKey, async (req, res, next) => {
       signalkUrl: signalkUrl || null,
       signalkToken: signalkToken || null,
       at4TcpPort: at4TcpPort || null,
+      enabledSources: enabledSources || undefined,
     });
 
     // Start services for this boat if managers are available and configs are set
@@ -201,9 +202,6 @@ router.post('/boats', requireApiKey, async (req, res, next) => {
     }
     if ((signalkUrl || signalkPort) && req.app.locals.signalkManager) {
       await req.app.locals.signalkManager.startForBoat(doc);
-    }
-    if (at4TcpPort && req.app.locals.at4Manager) {
-      await req.app.locals.at4Manager.startForBoat(boatId, at4TcpPort, mmsi);
     }
     if (at4TcpPort && req.app.locals.at4Manager) {
       await req.app.locals.at4Manager.startForBoat(boatId, at4TcpPort, mmsi);
@@ -230,7 +228,7 @@ router.post('/boats', requireApiKey, async (req, res, next) => {
 router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
   try {
     const { boatId } = req.params;
-    const { name, color, mmsi, nmeaTcpPort, signalkPort, signalkUrl, signalkToken, at4TcpPort } = req.body;
+    const { name, color, mmsi, nmeaTcpPort, at4TcpPort, signalkPort, signalkUrl, signalkToken, enabledSources } = req.body;
 
     // Validate port ranges if provided
     if (nmeaTcpPort !== undefined && nmeaTcpPort !== null) {
@@ -238,14 +236,14 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
         return res.status(400).json({ error: `NMEA TCP Port must be between ${NMEA_PORT_MIN} and ${NMEA_PORT_MAX}` });
       }
     }
-    if (signalkPort !== undefined && signalkPort !== null) {
-      if (signalkPort < SIGNALK_PORT_MIN || signalkPort > SIGNALK_PORT_MAX) {
-        return res.status(400).json({ error: `SignalK Port must be between ${SIGNALK_PORT_MIN} and ${SIGNALK_PORT_MAX}` });
-      }
-    }
     if (at4TcpPort !== undefined && at4TcpPort !== null) {
       if (at4TcpPort < AT4_PORT_MIN || at4TcpPort > AT4_PORT_MAX) {
         return res.status(400).json({ error: `AT4 TCP Port must be between ${AT4_PORT_MIN} and ${AT4_PORT_MAX}` });
+      }
+    }
+    if (signalkPort !== undefined && signalkPort !== null) {
+      if (signalkPort < SIGNALK_PORT_MIN || signalkPort > SIGNALK_PORT_MAX) {
+        return res.status(400).json({ error: `SignalK Port must be between ${SIGNALK_PORT_MIN} and ${SIGNALK_PORT_MAX}` });
       }
     }
 
@@ -254,10 +252,11 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
     if (color !== undefined) updates.color = color;
     if (mmsi !== undefined) updates.mmsi = mmsi;
     if (nmeaTcpPort !== undefined) updates.nmeaTcpPort = nmeaTcpPort;
+    if (at4TcpPort !== undefined) updates.at4TcpPort = at4TcpPort;
     if (signalkPort !== undefined) updates.signalkPort = signalkPort;
     if (signalkUrl !== undefined) updates.signalkUrl = signalkUrl;
     if (signalkToken !== undefined) updates.signalkToken = signalkToken;
-    if (at4TcpPort !== undefined) updates.at4TcpPort = at4TcpPort;
+    if (enabledSources !== undefined) updates.enabledSources = enabledSources;
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'No valid fields to update' });
@@ -291,11 +290,11 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
     if (nmeaTcpPort !== undefined && req.app.locals.nmeaManager) {
       await req.app.locals.nmeaManager.restartForBoat(boatId);
     }
-    if ((signalkPort !== undefined || signalkUrl !== undefined || signalkToken !== undefined) && req.app.locals.signalkManager) {
-      await req.app.locals.signalkManager.restartForBoat(boatId);
-    }
     if (at4TcpPort !== undefined && req.app.locals.at4Manager) {
       await req.app.locals.at4Manager.restartForBoat(boatId);
+    }
+    if ((signalkPort !== undefined || signalkUrl !== undefined || signalkToken !== undefined) && req.app.locals.signalkManager) {
+      await req.app.locals.signalkManager.restartForBoat(boatId);
     }
 
     res.json({
@@ -308,6 +307,7 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
       signalkUrl: boat.signalkUrl,
       // Don't expose signalkToken in response for security
       at4TcpPort: boat.at4TcpPort,
+      enabledSources: boat.enabledSources,
       message: 'Boat updated successfully'
     });
   } catch (err) {

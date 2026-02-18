@@ -62,10 +62,10 @@ function populateExpeditionSelect(expeditions) {
       optPlayback.textContent = exp.name + ' - Playback';
       sel.appendChild(optPlayback);
     } else {
-      // For historical expeditions, add single option
+      // For historical expeditions, add single option with Playback suffix only
       var opt = document.createElement('option');
       opt.value = exp.expeditionId;
-      opt.textContent = exp.name + ' [Historical]';
+      opt.textContent = exp.name + ' - Playback';
       sel.appendChild(opt);
     }
   });
