@@ -204,7 +204,7 @@ function renderExpeditionForm(expeditionId = null) {
   const formHtml = `
     <div class="admin-form" id="expedition-form">
       <div class="form-group">
-        <label>Expedition ID</label>
+        <label>Expedition id</label>
         <input type="text" id="exp-id" value="${expedition ? escapeHtml(expedition.expeditionId) : ''}" ${isEdit ? 'readonly' : ''} placeholder="e.g., summer-regatta-2024">
       </div>
       <div class="form-group">
@@ -212,11 +212,11 @@ function renderExpeditionForm(expeditionId = null) {
         <input type="text" id="exp-name" value="${expedition ? escapeHtml(expedition.name) : ''}" placeholder="e.g., Summer Regatta">
       </div>
       <div class="form-group">
-        <label>Start Date</label>
+        <label>Start date</label>
         <input type="date" id="exp-start" value="${expedition ? expedition.startDate.split('T')[0] : ''}">
       </div>
       <div class="form-group">
-        <label>End Date (optional)</label>
+        <label>End date (optional)</label>
         <input type="date" id="exp-end" value="${expedition && expedition.endDate ? expedition.endDate.split('T')[0] : ''}">
       </div>
       <div class="form-group">
@@ -228,7 +228,7 @@ function renderExpeditionForm(expeditionId = null) {
         <div class="boat-checklist" id="exp-boats"></div>
       </div>
       <div class="form-group toggle-group">
-        <label>Live Expedition</label>
+        <label>Live expedition</label>
         <label class="toggle-switch">
           <input type="checkbox" id="exp-live" ${expedition && expedition.live ? 'checked' : ''}>
           <span class="toggle-slider"></span>
@@ -273,7 +273,7 @@ function renderBoatForm(boatId = null) {
   const formHtml = `
     <div class="admin-form" id="boat-form">
       <div class="form-group">
-        <label>Boat ID</label>
+        <label>Boat id</label>
         <input type="text" id="boat-id" value="${boat ? escapeHtml(boat.boatId) : ''}" ${isEdit ? 'readonly' : ''} placeholder="e.g., boat-delta">
       </div>
       <div class="form-group">
@@ -289,17 +289,17 @@ function renderBoatForm(boatId = null) {
         <input type="text" id="boat-mmsi" value="${boat ? escapeHtml(boat.mmsi || '') : ''}" placeholder="9-digit number">
       </div>
       <div class="form-group">
-        <label>NMEA TCP Port (optional, 10110-10129)</label>
+        <label>NMEA TCP port (optional, 10110-10129)</label>
         <input type="number" id="boat-nmea-port" value="${boat && boat.nmeaTcpPort ? boat.nmeaTcpPort : ''}" placeholder="e.g., 10110" min="10110" max="10129">
         <small>Allocate a unique port for this boat's NMEA data stream</small>
       </div>
       <div class="form-group">
-        <label>SignalK Port (optional, 13110-13129)</label>
+        <label>SignalK port (optional, 13110-13129)</label>
         <input type="number" id="boat-signalk-port" value="${boat && boat.signalkPort ? boat.signalkPort : ''}" placeholder="e.g., 13110" min="13110" max="13129">
         <small>Allocate a unique port for this boat's SignalK connection</small>
       </div>
       <div class="form-group">
-        <label>Data Sources to Display</label>
+        <label>Data sources to display</label>
         <small>Select which data sources should be shown on the map for this boat</small>
         <div class="source-filter-list">
           ${renderSourceCheckboxes(boat)}
@@ -322,8 +322,8 @@ function renderBoatForm(boatId = null) {
 function renderSourceCheckboxes(boat) {
   const sources = [
     { value: 'phone', label: 'Phone GPS' },
-    { value: 'tracker', label: 'GPS Tracker' },
-    { value: 'gpx', label: 'GPX Import' },
+    { value: 'tracker', label: 'GPS tracker' },
+    { value: 'gpx', label: 'GPX import' },
     { value: 'nmea', label: 'NMEA 0183' },
     { value: 'signalk', label: 'SignalK' },
     { value: 'ais', label: 'AIS' }
@@ -413,12 +413,12 @@ async function saveBoat(isEdit) {
   const signalkPort = signalkPortInput ? parseInt(signalkPortInput, 10) : null;
 
   if (nmeaTcpPort && (nmeaTcpPort < 10110 || nmeaTcpPort > 10129)) {
-    alert('NMEA TCP Port must be between 10110 and 10129');
+    alert('NMEA TCP port must be between 10110 and 10129');
     return;
   }
 
   if (signalkPort && (signalkPort < 13110 || signalkPort > 13129)) {
-    alert('SignalK Port must be between 13110 and 13129');
+    alert('SignalK port must be between 13110 and 13129');
     return;
   }
 
@@ -580,7 +580,7 @@ function renderGPXMapping(gpxData) {
         <div class="mapping-controls">
           <label>Map to boat:</label>
           <select id="track-${idx}-boat" class="track-boat-select" data-track-idx="${idx}">
-            <option value="">-- Select Boat --</option>
+            <option value="">-- Select boat --</option>
             ${allBoats.map(boat => `
               <option value="${boat.boatId}">${escapeHtml(boat.name)} (${boat.boatId})</option>
             `).join('')}
@@ -718,18 +718,18 @@ function renderNMEASummary(nmeaData) {
   summaryDiv.innerHTML = `
     <div class="nmea-summary-info">
       <p><strong>File:</strong> ${escapeHtml(nmeaData.filename)}</p>
-      <p><strong>Total Lines:</strong> ${summary.totalLines}</p>
-      <p><strong>Positions Found:</strong> ${summary.positionsFound}</p>
+      <p><strong>Total lines:</strong> ${summary.totalLines}</p>
+      <p><strong>Positions found:</strong> ${summary.positionsFound}</p>
       <p><strong>Errors:</strong> ${summary.errors}</p>
       ${summary.timeRange ? `
-        <p><strong>Time Range:</strong> ${new Date(summary.timeRange.start).toLocaleString()} - ${new Date(summary.timeRange.end).toLocaleString()}</p>
+        <p><strong>Time range:</strong> ${new Date(summary.timeRange.start).toLocaleString()} - ${new Date(summary.timeRange.end).toLocaleString()}</p>
       ` : ''}
     </div>
   `;
 
   // Populate boat select dropdown
   const boatSelect = document.getElementById('nmea-boat-id');
-  boatSelect.innerHTML = '<option value="">-- Select Boat --</option>';
+  boatSelect.innerHTML = '<option value="">-- Select boat --</option>';
   allBoats.forEach(boat => {
     const option = document.createElement('option');
     option.value = boat.boatId;

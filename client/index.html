@@ -31,7 +31,7 @@
     <!-- Expedition picker (top-left, always visible) -->
     <div id="expedition-picker">
         <select id="expedition-select" title="Choose expedition">
-            <option value="">All Boats</option>
+            <option value="">All boats</option>
         </select>
     </div>
 
@@ -73,7 +73,7 @@
             </svg>
             <span>Admin</span>
         </button>
-        <button id="theme-toggle-btn" type="button" title="Toggle Dark Mode">
+        <button id="theme-toggle-btn" type="button" title="Toggle dark mode">
             <span id="theme-icon">🌙</span>
             <span id="theme-label">Dark mode</span>
         </button>
@@ -82,10 +82,10 @@
     <!-- Tracker config modal -->
     <div id="tracker-modal" class="tracker-modal-overlay hidden">
         <div class="tracker-modal">
-            <h3>Start Tracking</h3>
+            <h3>Start tracking</h3>
             <p>Your phone will send its GPS position to the map every 10 seconds.</p>
             <div class="field-group">
-                <label for="tracker-name">Boat / Device Name</label>
+                <label for="tracker-name">Boat / device name</label>
                 <input id="tracker-name" type="text" placeholder="e.g. Piotr's Phone" autocomplete="off" />
             </div>
             <div class="field-group">
@@ -94,10 +94,10 @@
                     placeholder="6-digit PIN" autocomplete="off" required />
             </div>
             <div class="field-group">
-                <label for="tracker-color">Marker Colour</label>
+                <label for="tracker-color">Marker colour</label>
                 <input id="tracker-color" type="color" value="#e74c3c" />
             </div>
-            <button id="tracker-start-btn" type="button">Start Tracking</button>
+            <button id="tracker-start-btn" type="button">Start tracking</button>
             <button id="tracker-cancel-btn" type="button" class="secondary">Cancel</button>
         </div>
     </div>
@@ -123,7 +123,7 @@
     <!-- Admin login modal -->
     <div id="admin-login-modal" class="admin-modal-overlay hidden">
         <div class="tracker-modal">
-            <h3>Admin Login</h3>
+            <h3>Admin login</h3>
             <p style="font-size: 14px; color: #666; margin-bottom: 16px;">Enter the master API key to access the admin
                 panel.</p>
             <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -143,20 +143,20 @@
     <div id="admin-modal" class="admin-modal-overlay hidden">
         <div class="admin-modal">
             <div class="admin-header">
-                <h3>Admin Panel</h3>
+                <h3>Admin panel</h3>
                 <button id="admin-close-btn" type="button" class="close-btn" title="Close">×</button>
             </div>
             <div class="admin-tabs">
                 <button class="tab-btn active" data-tab="expeditions">Expeditions</button>
                 <button class="tab-btn" data-tab="boats">Boats</button>
-                <button class="tab-btn" data-tab="gpx">GPX Import</button>
-                <button class="tab-btn" data-tab="nmea">NMEA Import</button>
+                <button class="tab-btn" data-tab="gpx">GPX import</button>
+                <button class="tab-btn" data-tab="nmea">NMEA import</button>
             </div>
             <div class="admin-content">
                 <div id="expeditions-tab" class="tab-content active">
                     <div class="tab-header">
-                        <h4>Manage Expeditions</h4>
-                        <button id="new-expedition-btn" type="button" class="primary-btn">+ New Expedition</button>
+                        <h4>Manage expeditions</h4>
+                        <button id="new-expedition-btn" type="button" class="primary-btn">+ New expedition</button>
                     </div>
                     <div class="data-table">
                         <table id="expeditions-table">
@@ -174,8 +174,8 @@
                 </div>
                 <div id="boats-tab" class="tab-content hidden">
                     <div class="tab-header">
-                        <h4>Manage Boats</h4>
-                        <button id="new-boat-btn" type="button" class="primary-btn">+ New Boat</button>
+                        <h4>Manage boats</h4>
+                        <button id="new-boat-btn" type="button" class="primary-btn">+ New boat</button>
                     </div>
                     <div id="boat-created-notice" class="boat-created-notice hidden">
                         <div class="bcn-header">
@@ -184,7 +184,7 @@
                                 onclick="document.getElementById('boat-created-notice').classList.add('hidden')">&times;</button>
                         </div>
                         <div class="bcn-row"><span>PIN</span><code id="bcn-pin"></code></div>
-                        <div class="bcn-row"><span>GPS Tracker API Key</span><code id="bcn-apikey"></code></div>
+                        <div class="bcn-row"><span>GPS tracker API key</span><code id="bcn-apikey"></code></div>
                         <p class="bcn-hint">Give the PIN to the boat captain to start tracking.</p>
                     </div>
                     <div class="data-table">
@@ -204,41 +204,41 @@
                 </div>
                 <div id="gpx-tab" class="tab-content hidden">
                     <div class="tab-header">
-                        <h4>GPX Import</h4>
+                        <h4>GPX import</h4>
                     </div>
                     <div class="gpx-section">
-                        <h5>Import GPX File</h5>
+                        <h5>Import GPX file</h5>
                         <p>Upload a GPX file containing historical track data. You'll map each track to an existing
                             boat. Leave boat dropdown empty to skip a track.</p>
                         <input type="file" id="gpx-file-input" accept=".gpx,application/gpx+xml" />
                         <button id="gpx-upload-btn" type="button" class="primary-btn">Upload & Preview</button>
                         <div id="gpx-preview" class="gpx-preview hidden">
-                            <h6>Map GPX Tracks to Boats</h6>
+                            <h6>Map GPX tracks to boats</h6>
                             <div id="gpx-mapping-list"></div>
                             <button id="gpx-import-confirm-btn" type="button" class="primary-btn">Import
-                                Locations</button>
+                                locations</button>
                             <button id="gpx-import-cancel-btn" type="button" class="secondary">Cancel</button>
                         </div>
                     </div>
                 </div>
                 <div id="nmea-tab" class="tab-content hidden">
                     <div class="tab-header">
-                        <h4>NMEA Import</h4>
+                        <h4>NMEA import</h4>
                     </div>
                     <div class="nmea-section">
-                        <h5>Import NMEA File</h5>
+                        <h5>Import NMEA file</h5>
                         <p>Upload an NMEA 0183 file from your chart plotter or GPS logger. Supported formats: .nmea,
                             .txt, .log</p>
                         <input type="file" id="nmea-file-input" accept=".nmea,.txt,.log,.nmea0183" />
                         <button id="nmea-upload-btn" type="button" class="primary-btn">Upload & Preview</button>
                         <div id="nmea-preview" class="nmea-preview hidden">
-                            <h6>Import Summary</h6>
+                            <h6>Import summary</h6>
                             <div id="nmea-summary"></div>
-                            <h6>Select Boat</h6>
+                            <h6>Select boat</h6>
                             <div id="nmea-boat-select">
                                 <label>Boat:
                                     <select id="nmea-boat-id" required>
-                                        <option value="">-- Select Boat --</option>
+                                        <option value="">-- Select boat --</option>
                                     </select>
                                 </label>
                                 <label>PIN:
@@ -247,7 +247,7 @@
                                 </label>
                             </div>
                             <button id="nmea-import-confirm-btn" type="button" class="primary-btn">Import
-                                Locations</button>
+                                locations</button>
                             <button id="nmea-import-cancel-btn" type="button" class="secondary">Cancel</button>
                         </div>
                     </div>
@@ -262,17 +262,17 @@
     <!-- Boat GPX Export Modal -->
     <div id="boat-export-modal" class="tracker-modal" style="display: none;">
         <div class="modal-content">
-            <h3>Export Boat GPX</h3>
+            <h3>Export boat GPX</h3>
             <input type="hidden" id="boat-export-id">
             <p>Exporting GPX for: <strong id="boat-export-name"></strong></p>
-            <label>Start Date:
+            <label>Start date:
                 <input type="date" id="boat-export-start" required>
             </label>
-            <label>End Date:
+            <label>End date:
                 <input type="date" id="boat-export-end" required>
             </label>
             <div class="modal-actions">
-                <button onclick="admin.confirmBoatExport()">Confirm Export</button>
+                <button onclick="admin.confirmBoatExport()">Confirm export</button>
                 <button class="delete-btn" onclick="admin.cancelBoatExport()">Cancel</button>
             </div>
         </div>
