@@ -23,6 +23,18 @@ function initAdmin() {
     closeAdminModal();
   });
 
+  // Refresh button
+  const refreshBtn = document.getElementById('admin-refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.classList.add('refreshing');
+      await loadData();
+      setTimeout(() => {
+        refreshBtn.classList.remove('refreshing');
+      }, 600);
+    });
+  }
+
   // Overlay click to close
   document.getElementById('admin-modal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeAdminModal();
@@ -80,6 +92,14 @@ function initAdmin() {
     nmeaImportCancelBtn.addEventListener('click', cancelNMEAImport);
   }
 
+  // Boat PIN/Keys modal overlay click to close
+  const boatPinKeysModal = document.getElementById('boat-pin-keys-modal');
+  if (boatPinKeysModal) {
+    boatPinKeysModal.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeBoatPinKeysModal();
+    });
+  }
+
   // Load initial data
   loadData();
 }
@@ -113,7 +133,9 @@ async function loadData() {
       allExpeditions = await response.json();
       renderExpeditionsTable();
     } else {
-      const response = await fetch('/api/boats');
+      const response = await fetch('/api/boats-metadata', {
+        headers: { 'x-api-key': getApiKey() }
+      });
       allBoats = await response.json();
       renderBoatsTable();
     }
@@ -174,11 +196,6 @@ function renderBoatsTable() {
     nameTd.textContent = boat.name;
     tr.appendChild(nameTd);
 
-    const pinTd = document.createElement('td');
-    pinTd.textContent = boat.pin || '-';
-    pinTd.style.fontFamily = 'monospace';
-    tr.appendChild(pinTd);
-
     const mmsiTd = document.createElement('td');
     mmsiTd.textContent = boat.mmsi || '-';
     tr.appendChild(mmsiTd);
@@ -186,6 +203,7 @@ function renderBoatsTable() {
     const actionsTd = document.createElement('td');
     actionsTd.className = 'actions';
     actionsTd.innerHTML = `
+      <button onclick="admin.showBoatPinKeys('${boat.boatId}', '${escapeHtml(boat.name)}', '${boat.pin}', '${boat.apiKey}')">PIN/Keys</button>
       <button onclick="admin.editBoat('${boat.boatId}')">Edit</button>
       <button class="delete-btn" onclick="admin.deleteBoat('${boat.boatId}')">Delete</button>
       <button onclick="admin.exportBoatGPX('${boat.boatId}', '${escapeHtml(boat.name)}')">📥 GPX</button>
@@ -902,6 +920,24 @@ function cancelBoatExport() {
   document.getElementById('boat-export-modal').classList.add('hidden');
 }
 
+// Show PIN and API key for a boat
+function showBoatPinKeys(boatId, boatName, pin, apiKey) {
+  const modal = document.getElementById('boat-pin-keys-modal');
+  if (!modal) {
+    console.error('boat-pin-keys-modal not found');
+    return;
+  }
+  document.getElementById('boat-pk-name').textContent = boatName;
+  document.getElementById('boat-pk-pin').textContent = pin;
+  document.getElementById('boat-pk-apikey').textContent = apiKey;
+  modal.classList.remove('hidden');
+}
+
+function closeBoatPinKeysModal() {
+  const modal = document.getElementById('boat-pin-keys-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
 // Helper to escape HTML
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -928,5 +964,7 @@ window.admin = {
   exportExpeditionGPX,
   exportBoatGPX,
   confirmBoatExport,
-  cancelBoatExport
+  cancelBoatExport,
+  showBoatPinKeys,
+  closeBoatPinKeysModal
 };

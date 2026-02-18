@@ -372,4 +372,16 @@ router.get('/boats/:boatId/export/gpx', requireApiKey, async (req, res, next) =>
   }
 });
 
+// ---------- GET /api/boats-metadata – Get all boat metadata (PIN, API keys, etc.) – Admin only ----------
+router.get('/boats-metadata', requireApiKey, async (_req, res, next) => {
+  try {
+    const boats = await Boat.find()
+      .select('-_id -__v')
+      .lean();
+    res.json(boats);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

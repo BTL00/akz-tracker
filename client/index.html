@@ -180,7 +180,16 @@
         <div class="admin-modal">
             <div class="admin-header">
                 <h3>Admin panel</h3>
-                <button id="admin-close-btn" type="button" class="close-btn" title="Close">×</button>
+                <div style="display: flex; gap: 8px;">
+                    <button id="admin-refresh-btn" type="button" class="close-btn" title="Refresh data">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36M20.49 15a9 9 0 0 1-14.85 3.36"></path>
+                        </svg>
+                    </button>
+                    <button id="admin-close-btn" type="button" class="close-btn" title="Close">×</button>
+                </div>
             </div>
             <div class="admin-tabs">
                 <button class="tab-btn active" data-tab="expeditions">Expeditions</button>
@@ -229,7 +238,6 @@
                                 <tr>
                                     <th></th>
                                     <th>Name</th>
-                                    <th>PIN</th>
                                     <th>MMSI</th>
                                     <th>Actions</th>
                                 </tr>
@@ -243,7 +251,6 @@
                         <h4>GPX import</h4>
                     </div>
                     <div class="gpx-section">
-                        <h5>Import GPX file</h5>
                         <p>Upload a GPX file containing historical track data. You'll map each track to an existing
                             boat. Leave boat dropdown empty to skip a track.</p>
                         <input type="file" id="gpx-file-input" accept=".gpx,application/gpx+xml" />
@@ -262,7 +269,6 @@
                         <h4>NMEA import</h4>
                     </div>
                     <div class="nmea-section">
-                        <h5>Import NMEA file</h5>
                         <p>Upload an NMEA 0183 file from your chart plotter or GPS logger. Supported formats: .nmea,
                             .txt, .log</p>
                         <input type="file" id="nmea-file-input" accept=".nmea,.txt,.log,.nmea0183" />
@@ -313,6 +319,25 @@
             <div class="modal-actions">
                 <button onclick="admin.confirmBoatExport()">Confirm export</button>
                 <button class="delete-btn" onclick="admin.cancelBoatExport()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Boat PIN/Keys Modal -->
+    <div id="boat-pin-keys-modal" class="tracker-modal-overlay hidden">
+        <div class="tracker-modal">
+            <h3>Boat PIN & API Key</h3>
+            <p>Credentials for: <strong id="boat-pk-name"></strong></p>
+            <div class="field-group">
+                <label>6-digit PIN</label>
+                <code style="display: block; padding: 12px; background: #f5f5f5; border-radius: 6px; font-size: 18px; letter-spacing: 4px; font-weight: bold; text-align: center;" id="boat-pk-pin"></code>
+            </div>
+            <div class="field-group">
+                <label>GPS Tracker API Key</label>
+                <code style="display: block; padding: 12px; background: #f5f5f5; border-radius: 6px; font-size: 12px; word-break: break-all; font-weight: normal;" id="boat-pk-apikey"></code>
+            </div>
+            <div class="modal-actions">
+                <button onclick="admin.closeBoatPinKeysModal()">Close</button>
             </div>
         </div>
     </div>
