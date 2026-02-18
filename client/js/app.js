@@ -388,7 +388,7 @@
     // Parse expedition ID and view type (format: "expeditionId:viewType" or just "expeditionId")
     var parts = value.split(':');
     var id = parts[0];
-    var viewType = parts[1] || 'history'; // default to history for old format
+    var viewType = parts[1] || 'history'; // default to history for historical expeditions (no view type suffix)
 
     // Fetch expedition details to check if it's live or historical
     fetch('/api/expeditions/' + encodeURIComponent(id))
@@ -403,7 +403,7 @@
           enterLiveOnlyMode(expedition);
         } else if (expedition.live && viewType === 'playback') {
           // Live expedition — Playback view (historical track with playback controls)
-          enterLivePlaybackMode(expedition.expeditionId);
+          enterLivePlaybackMode(expedition);
         } else {
           // Historical expedition — enter playback mode
           enterHistoryMode(expedition.expeditionId);
@@ -500,7 +500,7 @@
     }
   }
 
-  function enterLivePlaybackMode(expeditionId) {
+  function enterLivePlaybackMode(expedition) {
     mode = 'history';
     
     // Pause live polling
@@ -516,12 +516,12 @@
     clearBoats();
     clearTrackLines();
 
-    showToast('Loading expedition playback…');
+    showToast('Loading ' + expedition.name + ' playback…');
 
     // Fetch boats and track data
     Promise.all([
       fetch(API_BASE + '/api/boats').then(function (res) { return res.json(); }),
-      fetchExpeditionTrack(expeditionId)
+      fetchExpeditionTrack(expedition.expeditionId)
     ])
       .then(function (results) {
         hideToast();
