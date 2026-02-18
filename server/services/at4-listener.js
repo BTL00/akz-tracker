@@ -1,7 +1,7 @@
 /* ===== AT4 GPS Tracker TCP Listener Service ===== */
 
 const net = require('net');
-const { parsePacket, generateResponse } = require('../utils/at4');
+const { parsePacket, generateResponse, generateTimeCheckResponse } = require('../utils/at4');
 const Location = require('../models/Location');
 const Boat = require('../models/Boat');
 
@@ -141,10 +141,17 @@ class AT4Listener {
         console.warn(`[${clientData.imei || 'unknown'}] ⚠ No response for ${parsed.type}`);
       }
 
-      // Store IMEI from login packet
+      // Store IMEI from login packet and send advanced handshake
       if (parsed.type === 'login' && parsed.imei) {
         clientData.imei = parsed.imei;
         console.log(`[${clientData.imei}] ✓✓✓ LOGIN SUCCESSFUL - Serial from device: 0x${parsed.serial.toString(16).padStart(4, '0')}`);
+        
+        // Send TimeCheck packet to advance handshake and sync time
+        setTimeout(() => {
+          const timeCheckResponse = generateTimeCheckResponse(parsed.serial);
+          socket.write(timeCheckResponse);
+          console.log(`[${clientData.imei}] → Sent TimeCheck packet to sync device time`);
+        }, 100);
       }
 
       // Handle different packet types

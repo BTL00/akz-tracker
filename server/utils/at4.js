@@ -338,11 +338,54 @@ function parseLocationPacket(buffer) {
 }
 
 /**
- * Generate location response packet
- * @param {number} serial - Serial number from location packet
+ * Generate TimeCheck response packet
+ * Used to sync server time with device after login
+ * @param {number} serial - Serial number from request
  * @returns {Buffer} - Response buffer
  */
-function generateLocationResponse(serial) {
+function generateTimeCheckResponse(serial) {
+  const now = new Date();
+  const buffer = Buffer.alloc(16);
+  
+  // Start bits
+  buffer[0] = 0x78;
+  buffer[1] = 0x78;
+  
+  // Length (9 bytes: protocol + year+month+day+hour+min+sec + serial + CRC)
+  buffer[2] = 0x09;
+  
+  // Protocol (0x8A for TimeCheck)
+  buffer[3] = 0x8A;
+  
+  // Date/Time (6 bytes): YY MM DD HH MM SS
+  buffer[4] = now.getUTCFullYear() - 2000;
+  buffer[5] = now.getUTCMonth() + 1;
+  buffer[6] = now.getUTCDate();
+  buffer[7] = now.getUTCHours();
+  buffer[8] = now.getUTCMinutes();
+  buffer[9] = now.getUTCSeconds();
+  
+  // Serial number
+  buffer.writeUInt16BE(serial, 10);
+  
+  // Calculate and write CRC
+  const crc = calculateCRC16(buffer, 2, 12);
+  buffer.writeUInt16BE(crc, 12);
+  
+  // Stop bits
+  buffer[14] = 0x0D;
+  buffer[15] = 0x0A;
+  
+  return buffer;
+}
+
+/**
+ * Generate OnlineCommand response packet
+ * Used to acknowledge device is online and ready for data
+ * @param {number} serial - Serial number from request
+ * @returns {Buffer} - Response buffer
+ */
+function generateOnlineCommandResponse(serial) {
   const buffer = Buffer.alloc(10);
   
   // Start bits
@@ -352,8 +395,8 @@ function generateLocationResponse(serial) {
   // Length
   buffer[2] = 0x05;
   
-  // Protocol (0x22 for location response)
-  buffer[3] = 0x22;
+  // Protocol (0x80 for online command)
+  buffer[3] = 0x80;
   
   // Serial number
   buffer.writeUInt16BE(serial, 4);
@@ -456,6 +499,8 @@ module.exports = {
   generateLoginResponse,
   generateLocationResponse,
   generateHeartbeatResponse,
+  generateTimeCheckResponse,
+  generateOnlineCommandResponse,
   calculateCRC16,
   verifyCRC,
 };
