@@ -109,6 +109,10 @@ router.post('/location', async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid PIN' });
     }
 
+    if (source === 'validation') {
+      return res.status(204).end();
+    }
+
     // Use boat's stored details
     const doc = await Location.create({
       boatId: boat.boatId,
