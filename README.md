@@ -8,7 +8,7 @@ Live boat position tracker built on OpenSeaMap. Supports real-time positions via
 - Expedition recording and playback with speed control
 - GPX import and export
 - NMEA 0183 TCP listener and SignalK client (optional)
-- AT4 GPS Tracker support with binary GPRS protocol (optional)
+- AT4 GPS Tracker support with binary GPRS protocol (optional) - [Configuration Guide](docs/AT4_TRACKER_GUIDE.md)
 - PWA — installable on mobile
 - Dark / light theme
 
