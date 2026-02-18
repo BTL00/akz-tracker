@@ -178,11 +178,11 @@ function parseLocationPacket(buffer) {
   const speedKnots = speedKmh * 0.539957; // Convert km/h to knots
   
   // Course/Status (2 bytes)
-  // Bits 15-10: course (0-359 degrees)
+  // Bits 15-10: course/10 (0-35 range for 0-359 degrees)
   // Bits 9-0: status bits
   const courseStatus = buffer.readUInt16BE(offset);
   offset += 2;
-  const course = (courseStatus >> 10) & 0x3FF;
+  const course = ((courseStatus >> 10) & 0x3F) * 10; // Extract 6 bits and multiply by 10
   
   // Extract direction bits for lat/lon hemisphere
   // Bit 3: 0=East, 1=West
