@@ -19,6 +19,9 @@ function clampCourse(c) {
   return Math.round(c);
 }
 
+// Speed threshold for determining if a boat is underway vs anchored
+var MIN_UNDERWAY_SPEED = 0.5;
+
 // --------------- Boats ---------------
 var now = new Date();
 var boats = [
@@ -28,9 +31,9 @@ var boats = [
 ];
 
 // --------------- Expedition 1: Morning Regatta ---------------
-// 15 minutes, all 3 boats, 1-minute samples
-var exp1Start = new Date(now.getTime() - 90 * 60 * 1000); // 1h30m ago
-var exp1End   = new Date(exp1Start.getTime() + 15 * 60 * 1000);
+// 45 minutes, all 3 boats, 1-minute samples (extended for longer paths)
+var exp1Start = new Date(now.getTime() - 140 * 60 * 1000); // 2h20min ago
+var exp1End   = new Date(exp1Start.getTime() + 45 * 60 * 1000);
 var INTERVAL  = 60 * 1000; // 1 minute
 
 var docs = [];
@@ -71,9 +74,9 @@ for (var b = 0; b < boats.length; b++) {
 }
 
 // --------------- Expedition 2: Afternoon Cruise ---------------
-// 12 minutes, Alfa + Charlie only, 1-minute samples
-var exp2Start = new Date(now.getTime() - 30 * 60 * 1000); // 30 min ago
-var exp2End   = new Date(exp2Start.getTime() + 12 * 60 * 1000);
+// 30 minutes, Alfa + Charlie only, 1-minute samples (extended for longer paths)
+var exp2Start = new Date(now.getTime() - 60 * 60 * 1000); // 1h ago
+var exp2End   = new Date(exp2Start.getTime() + 30 * 60 * 1000);
 var exp2Boats = [boats[0], boats[2]]; // Alfa + Charlie
 
 for (var b2 = 0; b2 < exp2Boats.length; b2++) {
@@ -105,6 +108,57 @@ for (var b2 = 0; b2 < exp2Boats.length; b2++) {
       status: 'Under way',
       source: 'tracker',
       timestamp: t2,
+    });
+  }
+}
+
+// --------------- Expedition 3: Long Voyage ---------------
+// 90 minutes, Bravo + Charlie, 1-minute samples (new longer expedition)
+var exp3Start = new Date(now.getTime() - 240 * 60 * 1000); // 4h ago
+var exp3End   = new Date(exp3Start.getTime() + 90 * 60 * 1000);
+var exp3Boats = [boats[1], boats[2]]; // Bravo + Charlie
+
+for (var b3 = 0; b3 < exp3Boats.length; b3++) {
+  var boat3 = exp3Boats[b3];
+  // Start from different position
+  var lat3 = boat3.baseLat - 0.005;
+  var lon3 = boat3.baseLon + 0.004;
+  var course3 = clampCourse(boat3.course - 45); // rotated -45°
+  var speed3  = boat3.speed * 0.8; // Slower cruise
+  var steps3  = Math.floor((exp3End.getTime() - exp3Start.getTime()) / INTERVAL);
+
+  for (var k = 0; k <= steps3; k++) {
+    var t3 = new Date(exp3Start.getTime() + k * INTERVAL);
+    var rad3 = course3 * Math.PI / 180;
+    lat3 += 0.0003 * Math.cos(rad3);
+    lon3 += 0.0003 * Math.sin(rad3);
+    
+    // More varied course changes every 10 minutes
+    if (k % 10 === 0) {
+      course3 = clampCourse(course3 + (Math.random() - 0.5) * 30);
+    } else {
+      course3 = clampCourse(course3 + (Math.random() - 0.5) * 5);
+    }
+    
+    // Speed variations with occasional stops
+    if (k % 20 === 0 && Math.random() < 0.3) {
+      speed3 = 0; // Occasional stop
+    } else {
+      speed3 = Math.max(MIN_UNDERWAY_SPEED, boat3.speed * 0.8 + (Math.random() - 0.5) * 2);
+    }
+
+    docs.push({
+      boatId: boat3.id,
+      name: boat3.name,
+      mmsi: boat3.mmsi,
+      color: boat3.color,
+      lat: lat3,
+      lon: lon3,
+      course: clampCourse(course3),
+      speed: Math.round(speed3 * 10) / 10,
+      status: speed3 > MIN_UNDERWAY_SPEED ? 'Under way' : 'Anchored',
+      source: 'tracker',
+      timestamp: t3,
     });
   }
 }
@@ -169,7 +223,7 @@ db.expeditions.insertMany([
     live: false,
     startDate: exp1Start,
     endDate: exp1End,
-    description: 'Demo regatta with 3 boats, 15-minute race.',
+    description: 'Demo regatta with 3 boats, 45-minute race.',
     createdAt: new Date(),
   },
   {
@@ -179,9 +233,19 @@ db.expeditions.insertMany([
     live: true,
     startDate: exp2Start,
     endDate: exp2End,
-    description: 'Demo cruise with 2 boats, 12 minutes.',
+    description: 'Demo cruise with 2 boats, 30 minutes.',
+    createdAt: new Date(),
+  },
+  {
+    expeditionId: 'long-voyage',
+    name: 'Long Voyage',
+    boatIds: ['boat-bravo', 'boat-charlie'],
+    live: false,
+    startDate: exp3Start,
+    endDate: exp3End,
+    description: 'Extended voyage with 2 boats, 90 minutes with varied navigation.',
     createdAt: new Date(),
   },
 ]);
 
-print('✔  akz-tracker DB initialised: indexes created, 3 boats (with PINs) + 2 expeditions seeded.');
+print('✔  akz-tracker DB initialised: indexes created, 3 boats (with PINs) + 3 expeditions seeded with longer paths.');
