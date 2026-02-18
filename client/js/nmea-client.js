@@ -197,9 +197,11 @@ var NMEAClient = (function () {
       line = line.trim();
       if (line && (line.startsWith('$') || line.startsWith('!'))) {
         // Valid NMEA sentence
-        if (_sentenceBuffer.length < MAX_BUFFER_SIZE) {
-          _sentenceBuffer.push(line);
+        if (_sentenceBuffer.length >= MAX_BUFFER_SIZE) {
+          console.warn('NMEA buffer full, dropping oldest sentence');
+          _sentenceBuffer.shift(); // Remove oldest
         }
+        _sentenceBuffer.push(line);
       }
     });
   }

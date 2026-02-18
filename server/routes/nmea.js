@@ -2,7 +2,7 @@
 
 const express = require('express');
 const multer = require('multer');
-const { parseNMEA } = require('../utils/nmea');
+const { parseNMEA, parseSentence, extractPosition } = require('../utils/nmea');
 const Location = require('../models/Location');
 const Boat = require('../models/Boat');
 const config = require('../config');
@@ -172,9 +172,6 @@ router.post('/relay', async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid boat ID or PIN' });
     }
 
-    // Import NMEA parsing utilities
-    const { parseSentence, extractPosition } = require('../utils/nmea');
-    
     // Process sentences and accumulate state
     let state = {};
     let positionsToSave = [];

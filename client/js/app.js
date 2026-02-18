@@ -36,7 +36,8 @@
     try {
       map = initMap('map');
     } catch (err) {
-      console.warn('Map initialization failed:', err.message);
+      console.warn('Map initialization failed - map features will be unavailable:', err.message);
+      console.warn('This can happen if Leaflet library fails to load from CDN.');
       // Continue without map - other features should still work
     }
 
