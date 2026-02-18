@@ -19,6 +19,9 @@ function clampCourse(c) {
   return Math.round(c);
 }
 
+// Speed threshold for determining if a boat is underway vs anchored
+var MIN_UNDERWAY_SPEED = 0.5;
+
 // --------------- Boats ---------------
 var now = new Date();
 var boats = [
@@ -141,7 +144,7 @@ for (var b3 = 0; b3 < exp3Boats.length; b3++) {
     if (k % 20 === 0 && Math.random() < 0.3) {
       speed3 = 0; // Occasional stop
     } else {
-      speed3 = Math.max(0.5, boat3.speed * 0.8 + (Math.random() - 0.5) * 2);
+      speed3 = Math.max(MIN_UNDERWAY_SPEED, boat3.speed * 0.8 + (Math.random() - 0.5) * 2);
     }
 
     docs.push({
@@ -153,7 +156,7 @@ for (var b3 = 0; b3 < exp3Boats.length; b3++) {
       lon: lon3,
       course: clampCourse(course3),
       speed: Math.round(speed3 * 10) / 10,
-      status: speed3 > 0.5 ? 'Under way' : 'Anchored',
+      status: speed3 > MIN_UNDERWAY_SPEED ? 'Under way' : 'Anchored',
       source: 'tracker',
       timestamp: t3,
     });
