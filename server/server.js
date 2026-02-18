@@ -132,8 +132,18 @@ async function start() {
     console.log('SignalK client disabled');
   }
 
-  // Initialize AT4 TCP listener manager if enabled
-  if (config.at4TcpEnabled) {
+  // Initialize AT4 TCP listener manager if enabled or if any boats have AT4 config
+  let at4ManagerNeeded = config.at4TcpEnabled;
+  
+  // Check if any boats have per-boat AT4 config (only if not already enabled globally)
+  if (!at4ManagerNeeded) {
+    const boatsWithAT4 = await mongoose.connection.db.collection('boats').countDocuments({ 
+      at4TcpPort: { $ne: null, $exists: true } 
+    });
+    at4ManagerNeeded = boatsWithAT4 > 0;
+  }
+  
+  if (at4ManagerNeeded) {
     const at4Manager = new AT4ListenerManager(broadcastLocationUpdate);
     await at4Manager.startAll();
     // Store manager in app.locals for access in API routes

@@ -294,6 +294,11 @@ function renderBoatForm(boatId = null) {
         <small>Allocate a unique port for this boat's NMEA data stream</small>
       </div>
       <div class="form-group">
+        <label>AT4 TCP port (optional, 15110-15129)</label>
+        <input type="number" id="boat-at4-port" value="${boat && boat.at4TcpPort ? boat.at4TcpPort : ''}" placeholder="e.g., 15110" min="15110" max="15129">
+        <small>Allocate a unique port for this boat's AT4 GPS tracker connection</small>
+      </div>
+      <div class="form-group">
         <label>SignalK port (optional, 13110-13129)</label>
         <input type="number" id="boat-signalk-port" value="${boat && boat.signalkPort ? boat.signalkPort : ''}" placeholder="e.g., 13110" min="13110" max="13129">
         <small>Allocate a unique port for this boat's SignalK connection</small>
@@ -322,15 +327,17 @@ function renderBoatForm(boatId = null) {
 function renderSourceCheckboxes(boat) {
   const sources = [
     { value: 'phone', label: 'Phone GPS' },
-    { value: 'tracker', label: 'GPS tracker' },
+    { value: 'tracker', label: 'GPS tracker (REST)' },
+    { value: 'at4', label: 'GPS tracker (AT4)' },
     { value: 'gpx', label: 'GPX import' },
-    { value: 'nmea', label: 'NMEA 0183' },
+    { value: 'nmea-file', label: 'NMEA (file)' },
+    { value: 'nmea-tcp', label: 'NMEA (TCP)' },
     { value: 'signalk', label: 'SignalK' },
     { value: 'ais', label: 'AIS' }
   ];
 
   const enabledSources = boat && boat.enabledSources ? boat.enabledSources : 
-    ['phone', 'tracker', 'gpx', 'nmea', 'signalk', 'ais'];
+    ['phone', 'tracker', 'gpx', 'nmea-file', 'nmea-tcp', 'signalk', 'ais'];
 
   return sources.map(source => `
     <label class="source-checkbox">
@@ -396,6 +403,7 @@ async function saveBoat(isEdit) {
   const color = document.getElementById('boat-color').value;
   const mmsi = document.getElementById('boat-mmsi').value.trim();
   const nmeaPortInput = document.getElementById('boat-nmea-port').value.trim();
+  const at4PortInput = document.getElementById('boat-at4-port').value.trim();
   const signalkPortInput = document.getElementById('boat-signalk-port').value.trim();
   
   // Collect enabled sources from checkboxes
@@ -410,10 +418,16 @@ async function saveBoat(isEdit) {
 
   // Validate port ranges if provided
   const nmeaTcpPort = nmeaPortInput ? parseInt(nmeaPortInput, 10) : null;
+  const at4TcpPort = at4PortInput ? parseInt(at4PortInput, 10) : null;
   const signalkPort = signalkPortInput ? parseInt(signalkPortInput, 10) : null;
 
   if (nmeaTcpPort && (nmeaTcpPort < 10110 || nmeaTcpPort > 10129)) {
     alert('NMEA TCP port must be between 10110 and 10129');
+    return;
+  }
+
+  if (at4TcpPort && (at4TcpPort < 15110 || at4TcpPort > 15129)) {
+    alert('AT4 TCP port must be between 15110 and 15129');
     return;
   }
 
@@ -422,7 +436,7 @@ async function saveBoat(isEdit) {
     return;
   }
 
-  const data = { boatId: id, name, color, mmsi, nmeaTcpPort, signalkPort, enabledSources };
+  const data = { boatId: id, name, color, mmsi, nmeaTcpPort, at4TcpPort, signalkPort, enabledSources };
 
   try {
     if (isEdit) {
@@ -432,7 +446,7 @@ async function saveBoat(isEdit) {
           'Content-Type': 'application/json',
           'x-api-key': getApiKey()
         },
-        body: JSON.stringify({ name, color, mmsi, nmeaTcpPort, signalkPort, enabledSources })
+        body: JSON.stringify({ name, color, mmsi, nmeaTcpPort, at4TcpPort, signalkPort, enabledSources })
       });
       if (!response.ok) throw new Error('Failed to update boat');
       
