@@ -189,7 +189,7 @@ function generateLoginResponse(serial) {
  * @returns {Object|null} - { type: 'heartbeat', voltage: number, signalStrength: number, serial: number } or null
  */
 function parseHeartbeatPacket(buffer) {
-  if (buffer.length < 18) return null;
+  if (buffer.length < 16) return null;
   
   // Verify start bits
   if (buffer[0] !== 0x78 || buffer[1] !== 0x78) return null;
@@ -199,7 +199,10 @@ function parseHeartbeatPacket(buffer) {
   if (protocolNumber !== AT4_PROTOCOL.HEARTBEAT) return null;
   
   // Verify CRC
-  if (!verifyCRC(buffer)) return null;
+  if (!verifyCRC(buffer)) {
+    console.warn(`  -> Heartbeat CRC failed for packet: ${buffer.toString('hex')}`);
+    return null;
+  }
   
   let offset = 4;
   
@@ -221,6 +224,8 @@ function parseHeartbeatPacket(buffer) {
   
   // Serial number (2 bytes)
   const serial = buffer.readUInt16BE(offset);
+  
+  console.log(`  -> Heartbeat parsed: term=0x${terminalInfo.toString(16)}, volt=${voltage}V, signal=${signalStrength}, serial=0x${serial.toString(16).padStart(4, '0')}`);
   
   return {
     type: 'heartbeat',

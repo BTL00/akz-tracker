@@ -195,7 +195,7 @@ router.put('/expeditions/:expeditionId', requireApiKey, async (req, res, next) =
     const doc = await Expedition.findOneAndUpdate(
       { expeditionId: req.params.expeditionId },
       { $set: update },
-      { new: true }
+      { returnDocument: 'after' }
     )
       .select('-_id -__v')
       .lean();

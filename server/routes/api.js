@@ -265,7 +265,7 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
     const boat = await Boat.findOneAndUpdate(
       { boatId },
       { $set: updates },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!boat) {
