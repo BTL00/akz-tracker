@@ -8,3 +8,4 @@ backups/*.gz
 .DS_Store
 IMPLEMENTATION_SUMMARY.md
 open-sea-map.html
+pacage-lock.json

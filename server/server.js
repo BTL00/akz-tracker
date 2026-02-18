@@ -11,6 +11,7 @@ const gpxRoutes = require('./routes/gpx');
 const nmeaRoutes = require('./routes/nmea');
 const NMEAListenerManager = require('./services/nmea-listener-manager');
 const SignalKServiceManager = require('./services/signalk-manager');
+const AT4ListenerManager = require('./services/at4-listener-manager');
 
 const app = express();
 const server = http.createServer(app);
@@ -129,6 +130,16 @@ async function start() {
     app.locals.signalkManager = signalkManager;
   } else {
     console.log('SignalK client disabled');
+  }
+
+  // Initialize AT4 TCP listener manager if enabled
+  if (config.at4TcpEnabled) {
+    const at4Manager = new AT4ListenerManager(broadcastLocationUpdate);
+    await at4Manager.startAll();
+    // Store manager in app.locals for access in API routes
+    app.locals.at4Manager = at4Manager;
+  } else {
+    console.log('AT4 TCP listener disabled');
   }
 }
 
