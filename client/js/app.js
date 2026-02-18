@@ -488,11 +488,8 @@
     playBtn.innerHTML = SVG_PLAY;
     timeDisplay.textContent = '--:--';
 
-    // Show loading toast
+    // Show loading toast (will be hidden by fetchAndRender on success)
     showToast('Loading ' + expedition.name + ' (Live)');
-    setTimeout(function() {
-      hideToast();
-    }, 2000);
 
     // Render current live positions
     fetchAndRender();
