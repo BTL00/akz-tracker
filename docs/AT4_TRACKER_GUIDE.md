@@ -214,6 +214,10 @@ For issues specific to:
 
 ## References
 
+The following external resources were verified as of February 2026:
+
 - [AT4 User Manual](https://www.jimilab.com/wp-content/uploads/2022/09/AT4.pdf)
 - [Concox Protocol Documentation](https://www.traccar.org/protocol/5023-gt06/)
 - [AKZ Tracker API Documentation](../README.md)
+
+Note: External links may change over time. For the most current protocol details, refer to the implementation in `server/utils/at4.js`.

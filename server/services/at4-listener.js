@@ -6,7 +6,7 @@ const Location = require('../models/Location');
 const Boat = require('../models/Boat');
 
 class AT4Listener {
-  constructor(port = 5023, broadcastFunc = null) {
+  constructor(port = 15110, broadcastFunc = null) {
     this.port = port;
     this.server = null;
     this.clients = new Map(); // Map socket to { imei, boatId, buffer }
@@ -185,7 +185,7 @@ class AT4Listener {
       }
       
       if (!boat) {
-        console.warn(`Received location for unknown IMEI: ${clientData.imei} - rejecting`);
+        console.warn(`Received location for unknown IMEI: ${clientData.imei}. Please register this IMEI in a boat's MMSI field.`);
         return;
       }
 

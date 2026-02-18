@@ -186,10 +186,10 @@ function parseLocationPacket(buffer) {
   
   // Extract direction bits for lat/lon hemisphere
   // Bit 3: 0=East, 1=West
-  // Bit 2: 0=South, 1=North
+  // Bit 2: 1=North, 0=South
   const status = courseStatus & 0x3FF;
   const isWest = (status & 0x0008) !== 0;
-  const isNorth = (status & 0x0004) === 0;
+  const isNorth = (status & 0x0004) !== 0;
   
   // Apply hemisphere corrections
   const finalLat = isNorth ? lat : -lat;

@@ -7,6 +7,14 @@ const { generateGPX } = require('../utils/gpx');
 
 const router = express.Router();
 
+// Port range constants
+const NMEA_PORT_MIN = 10110;
+const NMEA_PORT_MAX = 10129;
+const SIGNALK_PORT_MIN = 13110;
+const SIGNALK_PORT_MAX = 13129;
+const AT4_PORT_MIN = 15110;
+const AT4_PORT_MAX = 15129;
+
 // ---------- Middleware: API-key check for write endpoints ----------
 function requireApiKey(req, res, next) {
   const key = req.headers['x-api-key'];
@@ -153,14 +161,14 @@ router.post('/boats', requireApiKey, async (req, res, next) => {
     if (!name) errors.push('name is required');
 
     // Validate port ranges if provided
-    if (nmeaTcpPort && (nmeaTcpPort < 10110 || nmeaTcpPort > 10129)) {
-      errors.push('NMEA TCP Port must be between 10110 and 10129');
+    if (nmeaTcpPort && (nmeaTcpPort < NMEA_PORT_MIN || nmeaTcpPort > NMEA_PORT_MAX)) {
+      errors.push(`NMEA TCP Port must be between ${NMEA_PORT_MIN} and ${NMEA_PORT_MAX}`);
     }
-    if (signalkPort && (signalkPort < 13110 || signalkPort > 13129)) {
-      errors.push('SignalK Port must be between 13110 and 13129');
+    if (signalkPort && (signalkPort < SIGNALK_PORT_MIN || signalkPort > SIGNALK_PORT_MAX)) {
+      errors.push(`SignalK Port must be between ${SIGNALK_PORT_MIN} and ${SIGNALK_PORT_MAX}`);
     }
-    if (at4TcpPort && (at4TcpPort < 15110 || at4TcpPort > 15129)) {
-      errors.push('AT4 TCP Port must be between 15110 and 15129');
+    if (at4TcpPort && (at4TcpPort < AT4_PORT_MIN || at4TcpPort > AT4_PORT_MAX)) {
+      errors.push(`AT4 TCP Port must be between ${AT4_PORT_MIN} and ${AT4_PORT_MAX}`);
     }
 
     if (errors.length) {
@@ -221,18 +229,18 @@ router.patch('/boats/:boatId', requireApiKey, async (req, res, next) => {
 
     // Validate port ranges if provided
     if (nmeaTcpPort !== undefined && nmeaTcpPort !== null) {
-      if (nmeaTcpPort < 10110 || nmeaTcpPort > 10129) {
-        return res.status(400).json({ error: 'NMEA TCP Port must be between 10110 and 10129' });
+      if (nmeaTcpPort < NMEA_PORT_MIN || nmeaTcpPort > NMEA_PORT_MAX) {
+        return res.status(400).json({ error: `NMEA TCP Port must be between ${NMEA_PORT_MIN} and ${NMEA_PORT_MAX}` });
       }
     }
     if (signalkPort !== undefined && signalkPort !== null) {
-      if (signalkPort < 13110 || signalkPort > 13129) {
-        return res.status(400).json({ error: 'SignalK Port must be between 13110 and 13129' });
+      if (signalkPort < SIGNALK_PORT_MIN || signalkPort > SIGNALK_PORT_MAX) {
+        return res.status(400).json({ error: `SignalK Port must be between ${SIGNALK_PORT_MIN} and ${SIGNALK_PORT_MAX}` });
       }
     }
     if (at4TcpPort !== undefined && at4TcpPort !== null) {
-      if (at4TcpPort < 15110 || at4TcpPort > 15129) {
-        return res.status(400).json({ error: 'AT4 TCP Port must be between 15110 and 15129' });
+      if (at4TcpPort < AT4_PORT_MIN || at4TcpPort > AT4_PORT_MAX) {
+        return res.status(400).json({ error: `AT4 TCP Port must be between ${AT4_PORT_MIN} and ${AT4_PORT_MAX}` });
       }
     }
 
