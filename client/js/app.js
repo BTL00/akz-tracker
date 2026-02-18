@@ -493,6 +493,11 @@
 
     // Render current live positions
     fetchAndRender();
+    
+    // Ensure live polling is active (restart if needed)
+    if (!timer) {
+      applyConnectionMode();
+    }
   }
 
   function enterLivePlaybackMode(expeditionId) {
