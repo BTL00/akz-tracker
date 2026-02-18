@@ -19,3 +19,6 @@ Set server tcp
 SERVER,1,gpsdev-eu.tracksolidpro.com,21102,0
 
 SERVER,1,akz-tracker.piotrbomba.com,21102,0
+
+
+I can forward TCP to tracksolid 

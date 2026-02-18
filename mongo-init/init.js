@@ -67,7 +67,7 @@ for (var b = 0; b < boats.length; b++) {
       course: clampCourse(course),
       speed: Math.round(speed * 10) / 10,
       status: 'Under way',
-      source: 'tracker',
+      source: 'at4',
       timestamp: t,
     });
   }
@@ -106,7 +106,7 @@ for (var b2 = 0; b2 < exp2Boats.length; b2++) {
       course: clampCourse(course2),
       speed: Math.round(speed2 * 10) / 10,
       status: 'Under way',
-      source: 'tracker',
+      source: 'at4',
       timestamp: t2,
     });
   }
@@ -157,7 +157,7 @@ for (var b3 = 0; b3 < exp3Boats.length; b3++) {
       course: clampCourse(course3),
       speed: Math.round(speed3 * 10) / 10,
       status: speed3 > MIN_UNDERWAY_SPEED ? 'Under way' : 'Anchored',
-      source: 'tracker',
+      source: 'at4',
       timestamp: t3,
     });
   }
@@ -176,7 +176,7 @@ boats.forEach(function (boat) {
     course: boat.course,
     speed: boat.speed,
     status: 'Under way',
-    source: 'tracker',
+    source: 'at4',
     timestamp: now,
   });
 });

@@ -87,7 +87,8 @@
             <!-- Tab selector for tracking mode -->
             <div class="tracker-tabs">
                 <button id="tracker-tab-gps" class="tracker-tab active" type="button">Phone GPS</button>
-                <button id="tracker-tab-nmea" class="tracker-tab" type="button">NMEA Client</button>
+                <!-- NMEA Client tab hidden for simplified GUI -->
+                <!-- <button id="tracker-tab-nmea" class="tracker-tab" type="button">NMEA Client</button> -->
             </div>
             
             <!-- GPS Tracking Mode -->
@@ -109,8 +110,8 @@
                 <button id="tracker-start-btn" type="button">Start tracking</button>
             </div>
             
-            <!-- NMEA Client Mode -->
-            <div id="tracker-nmea-panel" class="tracker-panel hidden">
+            <!-- NMEA Client Mode (hidden for simplified GUI) -->
+            <div id="tracker-nmea-panel" class="tracker-panel hidden" style="display:none;">
                 <p>Connect to an NMEA server (with WebSocket support) and relay position data.</p>
                 <div class="field-group">
                     <label for="nmea-server-host">NMEA Server URL</label>

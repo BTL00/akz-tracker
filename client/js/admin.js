@@ -306,17 +306,18 @@ function renderBoatForm(boatId = null) {
         <label>MMSI (optional)</label>
         <input type="text" id="boat-mmsi" value="${boat ? escapeHtml(boat.mmsi || '') : ''}" placeholder="9-digit number">
       </div>
-      <div class="form-group">
+      <!-- NMEA and SignalK ports hidden for simplified GUI -->
+      <div class="form-group" style="display:none;">
         <label>NMEA TCP port (optional, 10110-10129)</label>
         <input type="number" id="boat-nmea-port" value="${boat && boat.nmeaTcpPort ? boat.nmeaTcpPort : ''}" placeholder="e.g., 10110" min="10110" max="10129">
         <small>Allocate a unique port for this boat's NMEA data stream</small>
       </div>
       <div class="form-group">
-        <label>AT4 TCP port (optional, 15110-15129)</label>
-        <input type="number" id="boat-at4-port" value="${boat && boat.at4TcpPort ? boat.at4TcpPort : ''}" placeholder="e.g., 15110" min="15110" max="15129">
-        <small>Allocate a unique port for this boat's AT4 GPS tracker connection</small>
+        <label>AT4 Tracker TCP port (optional, 21100-21129)</label>
+        <input type="number" id="boat-at4-port" value="${boat && boat.at4TcpPort ? boat.at4TcpPort : ''}" placeholder="e.g., 21100" min="21100" max="21129">
+        <small>Allocate a unique port for this boat's AT4 GPS tracker connection (one tracker per boat per port)</small>
       </div>
-      <div class="form-group">
+      <div class="form-group" style="display:none;">
         <label>SignalK port (optional, 13110-13129)</label>
         <input type="number" id="boat-signalk-port" value="${boat && boat.signalkPort ? boat.signalkPort : ''}" placeholder="e.g., 13110" min="13110" max="13129">
         <small>Allocate a unique port for this boat's SignalK connection</small>
@@ -343,19 +344,16 @@ function renderBoatForm(boatId = null) {
 
 // Render source checkboxes for boat form
 function renderSourceCheckboxes(boat) {
+  // NMEA and SignalK sources removed for simplified GUI
   const sources = [
     { value: 'phone', label: 'Phone GPS' },
-    { value: 'tracker', label: 'GPS tracker (REST)' },
-    { value: 'at4', label: 'GPS tracker (AT4)' },
+    { value: 'at4', label: 'AT4 Tracker' },
     { value: 'gpx', label: 'GPX import' },
-    { value: 'nmea-file', label: 'NMEA (file)' },
-    { value: 'nmea-tcp', label: 'NMEA (TCP)' },
-    { value: 'signalk', label: 'SignalK' },
-    { value: 'ais', label: 'AIS' }
+    { value: 'nmea-file', label: 'NMEA (file input)' }
   ];
 
   const enabledSources = boat && boat.enabledSources ? boat.enabledSources : 
-    ['phone', 'tracker', 'gpx', 'nmea-file', 'nmea-tcp', 'signalk', 'ais'];
+    ['phone', 'at4', 'gpx', 'nmea-file'];
 
   return sources.map(source => `
     <label class="source-checkbox">
@@ -444,8 +442,8 @@ async function saveBoat(isEdit) {
     return;
   }
 
-  if (at4TcpPort && (at4TcpPort < 15110 || at4TcpPort > 15129)) {
-    alert('AT4 TCP port must be between 15110 and 15129');
+  if (at4TcpPort && (at4TcpPort < 21100 || at4TcpPort > 21129)) {
+    alert('AT4 TCP port must be between 21100 and 21129');
     return;
   }
 

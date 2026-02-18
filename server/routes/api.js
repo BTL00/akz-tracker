@@ -12,8 +12,8 @@ const NMEA_PORT_MIN = 10110;
 const NMEA_PORT_MAX = 10129;
 const SIGNALK_PORT_MIN = 13110;
 const SIGNALK_PORT_MAX = 13129;
-const AT4_PORT_MIN = 15110;
-const AT4_PORT_MAX = 15129;
+const AT4_PORT_MIN = 21100;
+const AT4_PORT_MAX = 21129;
 
 // ---------- Middleware: API-key check for write endpoints ----------
 function requireApiKey(req, res, next) {
@@ -121,7 +121,7 @@ router.post('/location', async (req, res, next) => {
       course,
       speed,
       status: status || 'Under way',
-      source: source || 'tracker',
+      source: source || 'at4',
     });
 
     // Broadcast location update via WebSocket

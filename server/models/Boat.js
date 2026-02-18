@@ -5,8 +5,8 @@ const NMEA_PORT_MIN = 10110;
 const NMEA_PORT_MAX = 10129;
 const SIGNALK_PORT_MIN = 13110;
 const SIGNALK_PORT_MAX = 13129;
-const AT4_PORT_MIN = 15110;
-const AT4_PORT_MAX = 15129;
+const AT4_PORT_MIN = 21100;
+const AT4_PORT_MAX = 21129;
 
 const boatSchema = new mongoose.Schema(
   {
@@ -49,8 +49,8 @@ const boatSchema = new mongoose.Schema(
     at4TcpPort: {
       type: Number,
       default: null,
-      min: 15110,
-      max: 15129,
+      min: AT4_PORT_MIN,
+      max: AT4_PORT_MAX,
     },
     signalkPort: {
       type: Number,
@@ -74,8 +74,8 @@ const boatSchema = new mongoose.Schema(
     },
     enabledSources: {
       type: [String],
-      enum: ['phone', 'tracker', 'gpx', 'nmea', 'signalk', 'ais'],
-      default: ['phone', 'tracker', 'gpx', 'nmea', 'signalk', 'ais'],
+      enum: ['phone', 'at4', 'gpx', 'nmea-file'],
+      default: ['phone', 'at4', 'gpx', 'nmea-file'],
     },
     createdAt: {
       type: Date,

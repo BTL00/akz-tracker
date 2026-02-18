@@ -21,10 +21,10 @@ Edit your `.env` file and enable AT4 support:
 
 ```bash
 AT4_TCP_ENABLED=true
-AT4_TCP_PORT=15110
+AT4_TCP_PORT=21100
 ```
 
-The default port is 15110, but you can use any port in the range 15110-15129 for different boats.
+The default port is 21100, but you can use any port in the range 21100-21129 for different boats.
 
 ### 2. Restart the Server
 
@@ -49,7 +49,7 @@ curl -X POST http://your-server.com/api/boats \
     "name": "My Boat",
     "color": "#FF5733",
     "mmsi": "123456789012345",
-    "at4TcpPort": 15110
+    "at4TcpPort": 21100
   }'
 ```
 
@@ -72,12 +72,12 @@ Send SMS commands to your AT4 device to configure the server connection:
 
 2. **Set Server IP and Port**:
    ```
-   SERVER,1,your-server-ip,15110,0#
+   SERVER,1,your-server-ip,21100,0#
    ```
    
    Replace:
    - `your-server-ip` with your server's public IP address
-   - `15110` with your configured AT4_TCP_PORT
+   - `21100` with your configured AT4_TCP_PORT
 
 3. **Set Upload Interval** (optional, in seconds):
    ```
@@ -96,7 +96,7 @@ For a server at IP `203.0.113.10` with the default port:
 
 ```
 APN,internet#
-SERVER,1,203.0.113.10,15110,0#
+SERVER,1,203.0.113.10,21100,0#
 TIMER,30#
 RESET#
 ```
@@ -136,7 +136,7 @@ The system supports the following AT4 protocol packets:
 2. Verify server configuration:
    - Check `AT4_TCP_ENABLED=true` in `.env`
    - Verify port is open in firewall
-   - Test with: `nc -l 15110` (should accept connections)
+   - Test with: `nc -l 21100` (should accept connections)
 
 3. Check server logs:
    ```bash
@@ -186,13 +186,13 @@ You can configure multiple boats with different ports:
 
 ```bash
 # Boat 1
-at4TcpPort: 15110
+at4TcpPort: 21100
 
 # Boat 2
-at4TcpPort: 15111
+at4TcpPort: 21101
 
 # Boat 3
-at4TcpPort: 15112
+at4TcpPort: 21102
 ```
 
 Each boat needs its own AT4 device with IMEI configured in the `mmsi` field.

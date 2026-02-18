@@ -67,17 +67,17 @@
     
     // Cache DOM elements — tracker tabs
     var trackerTabGPS  = document.getElementById('tracker-tab-gps');
-    var trackerTabNMEA = document.getElementById('tracker-tab-nmea');
     var trackerGPSPanel = document.getElementById('tracker-gps-panel');
-    var trackerNMEAPanel = document.getElementById('tracker-nmea-panel');
     
-    // Cache DOM elements — NMEA client
-    var nmeaServerHost = document.getElementById('nmea-server-host');
-    var nmeaServerPort = document.getElementById('nmea-server-port');
-    var nmeaBoatId = document.getElementById('nmea-boat-id');
-    var nmeaBoatPin = document.getElementById('nmea-boat-pin');
-    var nmeaStatus = document.getElementById('nmea-status');
-    var nmeaConnectBtn = document.getElementById('nmea-connect-btn');
+    // NMEA client elements commented out for simplified GUI
+    // var trackerTabNMEA = document.getElementById('tracker-tab-nmea');
+    // var trackerNMEAPanel = document.getElementById('tracker-nmea-panel');
+    // var nmeaServerHost = document.getElementById('nmea-server-host');
+    // var nmeaServerPort = document.getElementById('nmea-server-port');
+    // var nmeaBoatId = document.getElementById('nmea-boat-id');
+    // var nmeaBoatPin = document.getElementById('nmea-boat-pin');
+    // var nmeaStatus = document.getElementById('nmea-status');
+    // var nmeaConnectBtn = document.getElementById('nmea-connect-btn');
 
     // Cache DOM elements — connection controls
     connectionModeSelect = document.getElementById('connection-mode-select');
@@ -209,20 +209,20 @@
     timeSlider.addEventListener('input', onSliderInput);
 
     // ---------- Floating button: track device ----------
-    // Tracker tabs
-    trackerTabGPS.addEventListener('click', function () {
-      trackerTabGPS.classList.add('active');
-      trackerTabNMEA.classList.remove('active');
-      trackerGPSPanel.classList.remove('hidden');
-      trackerNMEAPanel.classList.add('hidden');
-    });
-    
-    trackerTabNMEA.addEventListener('click', function () {
-      trackerTabNMEA.classList.add('active');
-      trackerTabGPS.classList.remove('active');
-      trackerNMEAPanel.classList.remove('hidden');
-      trackerGPSPanel.classList.add('hidden');
-    });
+    // NMEA tracker tabs (commented out for simplified GUI)
+    // trackerTabGPS.addEventListener('click', function () {
+    //   trackerTabGPS.classList.add('active');
+    //   trackerTabNMEA.classList.remove('active');
+    //   trackerGPSPanel.classList.remove('hidden');
+    //   trackerNMEAPanel.classList.add('hidden');
+    // });
+    // 
+    // trackerTabNMEA.addEventListener('click', function () {
+    //   trackerTabNMEA.classList.add('active');
+    //   trackerTabGPS.classList.remove('active');
+    //   trackerNMEAPanel.classList.remove('hidden');
+    //   trackerGPSPanel.classList.add('hidden');
+    // });
     
     trackBtn.addEventListener('click', onTrackToggle);
     trackerStartBtn.addEventListener('click', onTrackerStart);
@@ -231,31 +231,24 @@
       if (e.target === trackerModal) hideTrackerModal();
     });
     
-    // NMEA client handlers
-    nmeaConnectBtn.addEventListener('click', onNMEAConnectToggle);
-    
-    // Configure NMEA client callback for status updates
-    NMEAClient.configure({
-      onStatusChange: function (status, message) {
-        updateNMEAStatus(status, message);
-      }
-    });
-    
-    // Load saved NMEA settings
-    var savedNMEAHost = localStorage.getItem('nmea-server-host');
-    var savedNMEAPort = localStorage.getItem('nmea-server-port');
-    var savedNMEABoatId = localStorage.getItem('nmea-boat-id');
-    var savedNMEABoatPin = localStorage.getItem('nmea-boat-pin');
-    
-    if (savedNMEAHost) nmeaServerHost.value = savedNMEAHost;
-    if (savedNMEAPort) nmeaServerPort.value = savedNMEAPort;
-    if (savedNMEABoatId) nmeaBoatId.value = savedNMEABoatId;
-    if (savedNMEABoatPin) nmeaBoatPin.value = savedNMEABoatPin;
-    
-    // Auto-start NMEA client if it was active
-    if (localStorage.getItem('nmea-client-active') === '1' && savedNMEAHost && savedNMEABoatId && savedNMEABoatPin) {
-      autoStartNMEAClient();
-    }
+    // NMEA client handlers (commented out for simplified GUI)
+    // nmeaConnectBtn.addEventListener('click', onNMEAConnectToggle);
+    // NMEAClient.configure({
+    //   onStatusChange: function (status, message) {
+    //     updateNMEAStatus(status, message);
+    //   }
+    // });
+    // var savedNMEAHost = localStorage.getItem('nmea-server-host');
+    // var savedNMEAPort = localStorage.getItem('nmea-server-port');
+    // var savedNMEABoatId = localStorage.getItem('nmea-boat-id');
+    // var savedNMEABoatPin = localStorage.getItem('nmea-boat-pin');
+    // if (savedNMEAHost) nmeaServerHost.value = savedNMEAHost;
+    // if (savedNMEAPort) nmeaServerPort.value = savedNMEAPort;
+    // if (savedNMEABoatId) nmeaBoatId.value = savedNMEABoatId;
+    // if (savedNMEABoatPin) nmeaBoatPin.value = savedNMEABoatPin;
+    // if (localStorage.getItem('nmea-client-active') === '1' && savedNMEAHost && savedNMEABoatId && savedNMEABoatPin) {
+    //   autoStartNMEAClient();
+    // }
 
     // Restore tracking state if previously active
     if (localStorage.getItem('tracker-active') === '1') {

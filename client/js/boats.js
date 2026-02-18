@@ -211,7 +211,7 @@ function drawTrackLines(map, tracks, boats) {
   var boatSourcesMap = {};
   if (boats) {
     boats.forEach(function (b) {
-      boatSourcesMap[b.boatId] = b.enabledSources || ['phone', 'tracker', 'gpx', 'nmea', 'signalk', 'ais'];
+      boatSourcesMap[b.boatId] = b.enabledSources || ['phone', 'at4', 'gpx', 'nmea-file'];
     });
   }
 

@@ -6,7 +6,7 @@ const Location = require('../models/Location');
 const Boat = require('../models/Boat');
 
 class AT4Listener {
-  constructor(port = 15110, broadcastFunc = null) {
+  constructor(port = 21100, broadcastFunc = null) {
     this.port = port;
     this.server = null;
     this.clients = new Map(); // Map socket to { imei, boatId, buffer }
@@ -203,7 +203,7 @@ class AT4Listener {
         course: Math.round(parsed.course || 0),
         speed: Math.round((parsed.speed || 0) * 10) / 10,
         status: 'Under way',
-        source: 'tracker',
+        source: 'at4',
         timestamp: parsed.timestamp || new Date(),
       });
 
