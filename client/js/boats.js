@@ -3,28 +3,50 @@
 var _markerPool  = {};    // { boatId: { marker, line, tooltip } }
 var _boatLayer   = null;  // L.LayerGroup
 var _trackLayer  = null;  // L.LayerGroup for historical track polylines
+var _iconCache   = {};    // Cache for boat icons { "course_speed_color": L.divIcon }
 
 /**
  * Build an SVG arrow icon as an L.divIcon, rotated to `course` degrees.
  * Red (#e74c3c) when moving, grey (#7f8c8d) when stopped.
+ * Icons are cached to avoid recreating identical SVG elements.
  */
 function boatIcon(course, speed, color) {
-  var fill   = speed > 0 ? (color || '#e74c3c') : '#7f8c8d';
+  // Normalize course to integer and speed to boolean for caching
+  var normalizedCourse = Math.round(course);
+  var isMoving = speed > 0;
+  var fill = isMoving ? (color || '#e74c3c') : '#7f8c8d';
+  
+  // Create cache key
+  var cacheKey = normalizedCourse + '_' + isMoving + '_' + fill;
+  
+  // Return cached icon if available
+  if (_iconCache[cacheKey]) {
+    return _iconCache[cacheKey];
+  }
+  
+  // Create new icon
   var stroke = '#222';
   var svg =
     '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"' +
-    ' style="transform:rotate(' + course + 'deg);transition:transform 0.3s ease">' +
+    ' style="transform:rotate(' + normalizedCourse + 'deg);transition:transform 0.3s ease">' +
     '<polygon points="14,2 24,24 14,19 4,24"' +
     ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.2"/>' +
     '</svg>';
 
-  return L.divIcon({
+  var icon = L.divIcon({
     html: svg,
     className: 'boat-icon',
     iconSize:   [28, 28],
     iconAnchor: [14, 14],
     popupAnchor: [0, -16],
   });
+  
+  // Cache the icon (limit cache size to prevent memory issues)
+  if (Object.keys(_iconCache).length < 3600) { // Max 360 degrees * 2 states * 5 colors = ~3600 icons
+    _iconCache[cacheKey] = icon;
+  }
+  
+  return icon;
 }
 
 /**
@@ -89,6 +111,7 @@ function ensureBoatLayer(map) {
 /**
  * Update boat markers using a persistent marker pool (no teardown).
  * Existing markers are moved; new ones are created; stale ones are removed.
+ * Optimized to avoid unnecessary icon updates.
  *
  * @param {L.Map} map
  * @param {Array} boats  – [{ boatId, name, lat, lon, course, speed, status, timestamp }]
@@ -110,7 +133,19 @@ function updateBoats(map, boats, opts) {
     if (existing) {
       // Move existing marker smoothly
       existing.marker.setLatLng([b.lat, b.lon]);
-      existing.marker.setIcon(boatIcon(b.course, b.speed, b.color));
+      
+      // Only update icon if course or speed state changed significantly
+      var lastCourse = existing.lastCourse || 0;
+      var lastSpeed = existing.lastSpeed || 0;
+      var courseChanged = Math.abs(Math.round(b.course) - Math.round(lastCourse)) >= 5; // 5 degree threshold
+      var speedStateChanged = (lastSpeed > 0) !== (b.speed > 0); // Moving vs stopped state
+      
+      if (courseChanged || speedStateChanged || !existing.lastCourse) {
+        existing.marker.setIcon(boatIcon(b.course, b.speed, b.color));
+        existing.lastCourse = b.course;
+        existing.lastSpeed = b.speed;
+      }
+      
       existing.marker.setPopupContent(boatPopupHtml(b));
       existing.marker.setTooltipContent(tooltipContent(b));
 
@@ -146,7 +181,12 @@ function updateBoats(map, boats, opts) {
       });
       line.addTo(_boatLayer);
 
-      _markerPool[b.boatId] = { marker: marker, line: line };
+      _markerPool[b.boatId] = { 
+        marker: marker, 
+        line: line,
+        lastCourse: b.course,
+        lastSpeed: b.speed
+      };
     }
   });
 
@@ -191,6 +231,7 @@ function clearBoats() {
     _boatLayer = null;
   }
   _markerPool = {};
+  _iconCache = {}; // Clear icon cache to free memory
   clearTrackLines();
 }
 

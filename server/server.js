@@ -1,6 +1,7 @@
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const mongoose = require('mongoose');
 const http = require('http');
 const WebSocket = require('ws');
@@ -59,6 +60,15 @@ app.locals.broadcastLocationUpdate = broadcastLocationUpdate;
 
 // --------------- Middleware ---------------
 app.use(cors());
+// Enable gzip compression for large JSON responses (especially expedition tracks)
+app.use(compression({ 
+  filter: (req, res) => {
+    // Compress all responses except WebSocket upgrades
+    if (req.headers['upgrade']) return false;
+    return compression.filter(req, res);
+  },
+  threshold: 1024 // Only compress responses > 1KB
+}));
 app.use(express.json({ limit: '10mb' }));
 
 // --------------- API routes ---------------
