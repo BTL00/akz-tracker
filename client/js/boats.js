@@ -3,6 +3,8 @@
 var _markerPool  = {};    // { boatId: { marker, line, tooltip } }
 var _boatLayer   = null;  // L.LayerGroup
 var _trackLayer  = null;  // L.LayerGroup for historical track polylines
+var _isSimplifiedMode = false;  // Track if simplified paths are currently shown
+var _fullTracks = null;  // Store full track data for later progressive rendering
 
 /**
  * Build an SVG arrow icon as an L.divIcon, rotated to `course` degrees.
@@ -195,14 +197,75 @@ function clearBoats() {
 }
 
 /**
+ * Simplify track data using time-bucket decimation.
+ * @param {Array} locations – Array of Location objects with timestamp
+ * @param {number} intervalMs – Time interval in milliseconds (e.g., 600000 for 10 min)
+ * @returns {Array} – Simplified array of locations
+ */
+function simplifyTrackByTime(locations, intervalMs) {
+  if (!locations || locations.length < 2) {
+    return locations;
+  }
+
+  // Sort by timestamp to ensure chronological order
+  var sortedPoints = locations.slice().sort(function (a, b) {
+    var timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    var timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return timeA - timeB;
+  });
+
+  var firstTime = new Date(sortedPoints[0].timestamp).getTime();
+  var lastTime = new Date(sortedPoints[sortedPoints.length - 1].timestamp).getTime();
+
+  // Build time buckets and find closest point to each boundary
+  var buckets = {}; // bucket number -> closest point
+
+  sortedPoints.forEach(function (point) {
+    if (!point.timestamp) return;
+
+    var pointTime = new Date(point.timestamp).getTime();
+    var bucketNum = Math.floor((pointTime - firstTime) / intervalMs);
+    var bucketBoundary = firstTime + (bucketNum * intervalMs);
+
+    // Keep point if it's the first in this bucket or closer to boundary than existing
+    if (!buckets[bucketNum]) {
+      buckets[bucketNum] = point;
+    } else {
+      var existing = buckets[bucketNum];
+      var existingTime = new Date(existing.timestamp).getTime();
+      var existingDist = Math.abs(existingTime - bucketBoundary);
+      var newDist = Math.abs(pointTime - bucketBoundary);
+
+      if (newDist < existingDist) {
+        buckets[bucketNum] = point;
+      }
+    }
+  });
+
+  // Convert to sorted array
+  var simplified = Object.keys(buckets)
+    .map(function (key) { return buckets[key]; })
+    .sort(function (a, b) {
+      return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+    });
+
+  return simplified;
+}
+
+/**
  * Draw historical track polylines on the map.
  * @param {L.Map} map
  * @param {Object} tracks  – { boatId: Location[] }  (ascending by timestamp)
  * @param {Array} boats    – Boat configuration objects with enabledSources
+ * @param {boolean} [simplified=false] – Whether to draw simplified tracks
  */
-function drawTrackLines(map, tracks, boats) {
+function drawTrackLines(map, tracks, boats, simplified) {
   clearTrackLines();
   _trackLayer = L.layerGroup().addTo(map);
+
+  // Store full tracks for later use
+  _fullTracks = tracks;
+  _isSimplifiedMode = !!simplified;
 
   var FALLBACK_COLORS = ['#2196F3', '#FF9800', '#4CAF50', '#9C27B0', '#F44336', '#00BCD4'];
   var colorIdx = 0;
@@ -230,6 +293,13 @@ function drawTrackLines(map, tracks, boats) {
     // Skip if filtering removed too many points
     if (points.length < 2) return;
 
+    // Apply simplification if requested (10-minute intervals)
+    if (simplified) {
+      var TEN_MINUTES_MS = 10 * 60 * 1000;
+      points = simplifyTrackByTime(points, TEN_MINUTES_MS);
+      if (points.length < 2) return;
+    }
+
     var latlngs = points.map(function (p) { return [p.lat, p.lon]; });
     // Use the boat's stored color if available, otherwise fall back to palette
     var color = (points[0] && points[0].color) || FALLBACK_COLORS[colorIdx % FALLBACK_COLORS.length];
@@ -252,4 +322,54 @@ function clearTrackLines() {
     _trackLayer.remove();
     _trackLayer = null;
   }
+}
+
+/**
+ * Get the simplified mode state.
+ * @returns {boolean}
+ */
+function isSimplifiedMode() {
+  return _isSimplifiedMode;
+}
+
+/**
+ * Set the simplified mode state.
+ * @param {boolean} value
+ */
+function setSimplifiedMode(value) {
+  _isSimplifiedMode = value;
+}
+
+/**
+ * Get the full tracks data.
+ * @returns {Object|null}
+ */
+function getFullTracks() {
+  return _fullTracks;
+}
+
+/**
+ * Initialize an empty track layer for progressive drawing.
+ * @param {L.Map} map
+ */
+function initTrackLayerForProgressive(map) {
+  if (!_trackLayer) {
+    _trackLayer = L.layerGroup().addTo(map);
+  }
+}
+
+/**
+ * Add a progressive path segment to the track layer.
+ * @param {Array} latlngs - Array of [lat, lon] coordinates
+ * @param {Object} style - Polyline style options
+ * @returns {L.Polyline} - The created polyline
+ */
+function addProgressivePathSegment(latlngs, style) {
+  if (!_trackLayer) {
+    return null;
+  }
+
+  var polyline = L.polyline(latlngs, style);
+  polyline.addTo(_trackLayer);
+  return polyline;
 }

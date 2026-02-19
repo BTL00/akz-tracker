@@ -14,6 +14,10 @@ var Playback = (function () {
   var _lastFrame  = 0;      // performance.now() of last rAF tick
   var _rafId      = null;
 
+  // Progressive path drawing state
+  var _drawnPathSegments = {};  // { boatId: { polylines: [], lastDrawnIndex: 0 } }
+  var _progressiveMode = false; // Track if we're in progressive drawing mode
+
   // Skip-idle feature state
   var _skipIdleEnabled = false;         // toggle for skip-idle feature
   var _idleThreshold = 0.5;             // knots – speed below this is considered idle
@@ -140,8 +144,8 @@ var Playback = (function () {
     // Precompute idle segments for skip-idle feature
     _idleSegments = computeIdleSegments(tracks);
 
-    // Draw track polylines with boat configurations for filtering
-    drawTrackLines(_map, tracks, _boats);
+    // Draw simplified track polylines initially
+    drawTrackLines(_map, tracks, _boats, true);
 
     // Show boats at start position
     render();
@@ -155,6 +159,26 @@ var Playback = (function () {
     if (_currentTime >= _endTime) {
       _currentTime = _startTime; // restart if at end
     }
+
+    // If in simplified mode, switch to progressive rendering
+    if (isSimplifiedMode()) {
+      clearTrackLines();
+      setSimplifiedMode(false);
+      _progressiveMode = true;
+
+      // Initialize progressive drawing state for each boat
+      _drawnPathSegments = {};
+      Object.keys(_tracks).forEach(function (boatId) {
+        _drawnPathSegments[boatId] = {
+          polylines: [],
+          lastDrawnIndex: 0,
+        };
+      });
+
+      // Initialize empty track layer for progressive drawing
+      initTrackLayerForProgressive(_map);
+    }
+
     _playing   = true;
     _lastFrame = performance.now();
     _rafId     = requestAnimationFrame(tick);
@@ -177,6 +201,19 @@ var Playback = (function () {
   function stop() {
     pause();
     _currentTime = _startTime;
+
+    // Clear progressive paths and restore simplified view
+    if (_progressiveMode) {
+      clearTrackLines();
+      _drawnPathSegments = {};
+      _progressiveMode = false;
+
+      // Redraw simplified tracks
+      if (_tracks) {
+        drawTrackLines(_map, _tracks, _boats, true);
+      }
+    }
+
     render();
   }
 
@@ -238,12 +275,18 @@ var Playback = (function () {
 
   /**
    * Render the current state: interpolate positions and update markers.
+   * Also handles progressive path drawing during playback.
    */
   function render() {
     if (!_tracks || !_map) return;
 
     var boats = interpolatePositions(_tracks, _currentTime);
     updateBoats(_map, boats, { fitBounds: false });
+
+    // Draw progressive path segments if in progressive mode
+    if (_progressiveMode) {
+      drawProgressivePaths();
+    }
 
     if (_onRender) {
       _onRender(boats);
@@ -255,6 +298,77 @@ var Playback = (function () {
   }
 
   /**
+   * Draw path segments progressively behind boats up to current time.
+   */
+  function drawProgressivePaths() {
+    var FALLBACK_COLORS = ['#2196F3', '#FF9800', '#4CAF50', '#9C27B0', '#F44336', '#00BCD4'];
+    var colorIdx = 0;
+
+    // Build map of boatId -> enabledSources for filtering
+    var boatSourcesMap = {};
+    if (_boats) {
+      _boats.forEach(function (b) {
+        boatSourcesMap[b.boatId] = b.enabledSources || ['phone', 'at4', 'gpx', 'nmea-file'];
+      });
+    }
+
+    Object.keys(_tracks).forEach(function (boatId) {
+      var allPoints = _tracks[boatId];
+      if (!allPoints || allPoints.length < 2) return;
+
+      // Filter by enabled sources
+      var enabledSources = boatSourcesMap[boatId];
+      if (enabledSources) {
+        allPoints = allPoints.filter(function (p) {
+          return p.source && enabledSources.indexOf(p.source) !== -1;
+        });
+      }
+
+      if (allPoints.length < 2) return;
+
+      var segmentState = _drawnPathSegments[boatId];
+      if (!segmentState) return;
+
+      // Find all points up to current time that haven't been drawn yet
+      var pointsToDraw = [];
+      for (var i = segmentState.lastDrawnIndex; i < allPoints.length; i++) {
+        var point = allPoints[i];
+        var pointTime = new Date(point.timestamp).getTime();
+        if (pointTime <= _currentTime) {
+          pointsToDraw.push(point);
+          segmentState.lastDrawnIndex = i + 1;
+        } else {
+          break;
+        }
+      }
+
+      // Draw new points in batches of ~50-100 for performance
+      if (pointsToDraw.length > 0) {
+        var BATCH_SIZE = 75;
+        var color = (allPoints[0] && allPoints[0].color) || FALLBACK_COLORS[colorIdx % FALLBACK_COLORS.length];
+
+        for (var j = 0; j < pointsToDraw.length; j += BATCH_SIZE) {
+          var batch = pointsToDraw.slice(j, j + BATCH_SIZE);
+          if (batch.length > 0) {
+            var latlngs = batch.map(function (p) { return [p.lat, p.lon]; });
+            var polyline = addProgressivePathSegment(latlngs, {
+              color: color,
+              weight: 3,
+              opacity: 0.6,
+            });
+
+            if (polyline) {
+              segmentState.polylines.push(polyline);
+            }
+          }
+        }
+      }
+
+      colorIdx++;
+    });
+  }
+
+  /**
    * Clean up: stop playback, remove tracks.
    */
   function destroy() {
@@ -262,6 +376,8 @@ var Playback = (function () {
     _tracks = null;
     _boats = null;
     _idleSegments = [];
+    _drawnPathSegments = {};
+    _progressiveMode = false;
     clearTrackLines();
   }
 
