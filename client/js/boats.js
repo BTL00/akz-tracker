@@ -249,6 +249,7 @@ function simplifyTrackByTime(locations, intervalMs) {
       return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
     });
 
+  console.log('[BOATS] Simplified track from', locations.length, 'to', simplified.length, 'points');
   return simplified;
 }
 
@@ -266,6 +267,8 @@ function drawTrackLines(map, tracks, boats, simplified) {
   // Store full tracks for later use
   _fullTracks = tracks;
   _isSimplifiedMode = !!simplified;
+
+  console.log('[BOATS] drawTrackLines called, simplified:', simplified, 'boats:', Object.keys(tracks).length);
 
   var FALLBACK_COLORS = ['#2196F3', '#FF9800', '#4CAF50', '#9C27B0', '#F44336', '#00BCD4'];
   var colorIdx = 0;
@@ -295,8 +298,10 @@ function drawTrackLines(map, tracks, boats, simplified) {
 
     // Apply simplification if requested (10-minute intervals)
     if (simplified) {
+      var originalCount = points.length;
       var TEN_MINUTES_MS = 10 * 60 * 1000;
       points = simplifyTrackByTime(points, TEN_MINUTES_MS);
+      console.log('[BOATS] Boat', boatId, 'simplified from', originalCount, 'to', points.length, 'points');
       if (points.length < 2) return;
     }
 
@@ -366,9 +371,11 @@ function initTrackLayerForProgressive(map) {
  */
 function addProgressivePathSegment(latlngs, style) {
   if (!_trackLayer) {
+    console.warn('[BOATS] addProgressivePathSegment: No track layer!');
     return null;
   }
 
+  console.log('[BOATS] Adding progressive segment with', latlngs.length, 'points');
   var polyline = L.polyline(latlngs, style);
   polyline.addTo(_trackLayer);
   return polyline;

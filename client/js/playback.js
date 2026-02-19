@@ -162,6 +162,7 @@ var Playback = (function () {
 
     // If in simplified mode, switch to progressive rendering
     if (isSimplifiedMode()) {
+      console.log('[PLAYBACK] Entering progressive mode - clearing simplified paths');
       clearTrackLines();
       setSimplifiedMode(false);
       _progressiveMode = true;
@@ -173,10 +174,13 @@ var Playback = (function () {
           polylines: [],
           lastDrawnIndex: 0,
         };
+        console.log('[PLAYBACK] Initialized progressive state for boat', boatId, 'with', _tracks[boatId].length, 'points');
       });
 
       // Initialize empty track layer for progressive drawing
       initTrackLayerForProgressive(_map);
+      console.log('[PLAYBACK] Drawing initial path up to current time');
+      drawProgressivePaths();
     }
 
     _playing   = true;
@@ -285,6 +289,7 @@ var Playback = (function () {
 
     // Draw progressive path segments if in progressive mode
     if (_progressiveMode) {
+      console.log('[PLAYBACK] render() - progressive mode active, currentTime:', new Date(_currentTime).toISOString());
       drawProgressivePaths();
     }
 
@@ -301,6 +306,7 @@ var Playback = (function () {
    * Draw path segments progressively behind boats up to current time.
    */
   function drawProgressivePaths() {
+    console.log('[PLAYBACK] drawProgressivePaths() called');
     var FALLBACK_COLORS = ['#2196F3', '#FF9800', '#4CAF50', '#9C27B0', '#F44336', '#00BCD4'];
     var colorIdx = 0;
 
@@ -327,7 +333,12 @@ var Playback = (function () {
       if (allPoints.length < 2) return;
 
       var segmentState = _drawnPathSegments[boatId];
-      if (!segmentState) return;
+      if (!segmentState) {
+        console.warn('[PLAYBACK] No segment state for boat', boatId);
+        return;
+      }
+
+      console.log('[PLAYBACK] Boat', boatId, '- lastDrawnIndex:', segmentState.lastDrawnIndex, 'totalPoints:', allPoints.length);
 
       // Find all points up to current time that haven't been drawn yet
       var pointsToDraw = [];
@@ -344,12 +355,15 @@ var Playback = (function () {
 
       // Draw new points in batches of ~50-100 for performance
       if (pointsToDraw.length > 0) {
+        console.log('[PLAYBACK] Boat', boatId, '- drawing', pointsToDraw.length, 'new points');
         var BATCH_SIZE = 75;
         var color = (allPoints[0] && allPoints[0].color) || FALLBACK_COLORS[colorIdx % FALLBACK_COLORS.length];
+        console.log('[PLAYBACK] Using color:', color);
 
         for (var j = 0; j < pointsToDraw.length; j += BATCH_SIZE) {
           var batch = pointsToDraw.slice(j, j + BATCH_SIZE);
           if (batch.length > 0) {
+            console.log('[PLAYBACK] Creating batch', Math.floor(j / BATCH_SIZE) + 1, 'with', batch.length, 'points');
             var latlngs = batch.map(function (p) { return [p.lat, p.lon]; });
             var polyline = addProgressivePathSegment(latlngs, {
               color: color,
@@ -359,6 +373,9 @@ var Playback = (function () {
 
             if (polyline) {
               segmentState.polylines.push(polyline);
+              console.log('[PLAYBACK] Successfully added polyline, total segments:', segmentState.polylines.length);
+            } else {
+              console.warn('[PLAYBACK] Failed to create polyline for batch');
             }
           }
         }
