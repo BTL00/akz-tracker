@@ -1,6 +1,6 @@
 /* ===== Service Worker – AKZ Tracker ===== */
 
-var CACHE_NAME = 'akz-tracker-v33';
+var CACHE_NAME = 'akz-tracker-v34';
 var SHELL_URLS = [
   '/',
   '/index.html',
