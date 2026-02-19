@@ -339,10 +339,11 @@ function parseLocationPacket(buffer) {
   // TODO: Temporary fix for some devices that set wrong hemisphere bits - if lat/lon are in wrong hemisphere, make them always positive
   if ((isNorth && finalLat < 0) || (!isNorth && finalLat > 0)) {
     console.warn(`  -> Latitude hemisphere bit mismatch: isNorth=${isNorth}, rawLat=${lat.toFixed(6)}, finalLat=${finalLat.toFixed(6)} - correcting to positive`);
+   }
     finalLat = Math.abs(lat);
     finalLon = Math.abs(lon);
-  }
-       
+    
+  // END TODO
   console.log(`[Location] Raw=(${lat.toFixed(6)}, ${lon.toFixed(6)}), Status=0x${status.toString(16).padStart(3, '0')} (north=${isNorth}, west=${isWest}) -> Final=(${finalLat.toFixed(6)}, ${finalLon.toFixed(6)})`);
   
   // MCC (Mobile Country Code) - 2 bytes
